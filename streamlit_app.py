@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Apply custom CSS to maximize space and prevent flickering
+# Apply custom CSS to maximize space
 st.markdown("""
 <style>
     .main .block-container {
@@ -28,14 +28,6 @@ st.markdown("""
         height: 100vh;
         border: none;
     }
-    /* Prevent Streamlit from handling clicks outside specific UI elements */
-    .element-container {
-        pointer-events: none;
-    }
-    /* But allow pointer events on the iframe itself */
-    iframe {
-        pointer-events: auto !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,8 +40,8 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Add a wrapper to the HTML content to prevent event bubbling
-    wrapped_html = f"""
+    # Modify the HTML content to make it work better in an iframe
+    modified_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -58,11 +50,17 @@ try:
                 margin: 0;
                 padding: 0;
                 height: 100%;
-                overflow: hidden;
+                overflow: auto;
             }}
             #game-container {{
                 width: 100%;
-                height: 100vh;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+            }}
+            .container {{
+                max-width: 800px;
+                width: 100%;
             }}
         </style>
     </head>
@@ -70,18 +68,12 @@ try:
         <div id="game-container">
             {html_content}
         </div>
-        <script>
-            // Prevent event bubbling to Streamlit
-            document.getElementById('game-container').addEventListener('click', function(e) {{
-                e.stopPropagation();
-            }}, true);
-        </script>
     </body>
     </html>
     """
     
-    # Display the wrapped HTML content
-    components.html(wrapped_html, height=1000, scrolling=False)
+    # Display the HTML content
+    components.html(modified_html, height=1000, scrolling=True)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
