@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card Bluff Roulette with Mine Challenge</title>
+  <style>
+    /* Base styles and card game theme */
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #080b14;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .section {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .title {
+      font-size: 42px;
+      margin-bottom: 20px;
+      background: linear-gradient(to right, #00b4d8, #0077b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      font-weight: 800;
+    }
+    .subtitle {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+    .text-center { text-align: center; }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .button {
+      background: linear-gradient(135deg, #00b4d8, #0096c7);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+    }
+    .button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 180, 216, 0.5);
+    }
+    .button:active { transform: translateY(-1px); }
+    .button.green {
+      background: linear-gradient(135deg, #38b000, #70e000);
+      box-shadow: 0 4px 12px rgba(56, 176, 0, 0.3);
+    }
+    .button.green:hover { box-shadow: 0 6px 16px rgba(56, 176, 0, 0.5); }
+    .button.red {
+      background: linear-gradient(135deg, #d00000, #dc2f02);
+      box-shadow: 0 4px 12px rgba(208, 0, 0, 0.3);
+    }
+    .button.red:hover { box-shadow: 0 6px 16px rgba(208, 0, 0, 0.5); }
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 20px 0;
+      align-items: center;
+    }
+    input[type="text"],
+    input[type="number"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 80%;
+      max-width: 300px;
+      font-size: 16px;
+    }
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    .hand-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .hand-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    /* Win conditions:
+         - A player wins if they empty their hand.
+         - If during the mine challenge the lose diamond is clicked, the game ends and returns to the start screen.
+    */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      animation: fadeInOverlay 0.3s ease;
+    }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    .overlay-content {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 40px;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      animation: scaleIn 0.3s ease;
+    }
+    @keyframes scaleIn {
+      from { transform: scale(0.9); }
+      to { transform: scale(1); }
+    }
+    .switch-animation {
+      background-color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 110;
+    }
+    .switch-text {
+      color: white;
+      font-size: 64px;
+      font-weight: bold;
+      animation: pulse 1s infinite, expandText 1.5s ease;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1.02); }
+      100% { opacity: 0.6; transform: scale(0.98); }
+    }
+    @keyframes expandText {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    /* Card styles */
+    .card {
+      width: 80px;
+      height: 120px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
+      position: relative;
+      margin: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); }
+    .card.selected {
+      border-color: #00b4d8;
+      box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.5), 0 8px 16px rgba(0, 0, 0, 0.4);
+      transform: translateY(-8px);
+    }
+    .card.center-card {
+      border-color: #ffd700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    .card-back {
+      width: 80px;
+      height: 120px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+    .card-back:hover { transform: scale(1.05); }
+    .card-back-inner {
+      width: 50px;
+      height: 80px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+    }
+    .card-value { font-size: 18px; font-weight: bold; }
+    .card-value.bottom { align-self: flex-end; transform: rotate(180deg); }
+    .card-suit { font-size: 28px; text-align: center; }
+    .red { color: #e53935; }
+    .black { color: #212121; }
+    .card-stack {
+      position: relative;
+      width: 100px;
+      height: 140px;
+      margin: 0 auto;
+    }
+    .stack-card {
+      position: absolute;
+      width: 80px;
+      height: 120px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    .card-counter {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #1e3c72;
+      font-size: 20px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    /* Mine game styles */
+    .mine-container {
+      display: flex;
+      gap: 10px;
+      margin: 20px auto;
+      justify-content: center;
+    }
+    .diamond {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #38b000, #1a7f00);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+      border: 2px solid #0f5200;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+    }
+    .diamond.mine {
+      background: linear-gradient(135deg, #d00000, #9d0208);
+      border-color: #6a040f;
+    }
+    .diamond:hover { transform: scale(1.1); }
+    .mine-message {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #38b000;
+      animation: fadeIn 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="game" class="container"></div>
+  <script>
+    // --------------------
+    // Game state & variables
+    // --------------------
+    const gameState = {
+      phase: 'setup', // phases: setup, play, guess, result, mine, gameover
+      deck: [],
+      centerCard: null,
+      cardsHidden: true,
+      showSwitch: false,
+      currentPlayer: 0,
+      selectedCards: [],
+      // Each player's hand of cards
+      playerHands: [[], []],
+      // Each player starts with 6 diamonds for their Mine Challenge
+      playerMines: [6, 6],
+      // Player names (default values)
+      playerNames: ["Player 1", "Player 2"],
+      // Maximum cards a player can select (default is 10)
+      maxCards: 10,
+      // Mine game properties
+      minePosition: null,
+      mineRevealed: false,
+      mineMessage: '',
+      winner: null  // index of winning player
+    };
+    
+    // Card properties
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    const suitSymbols = { 'hearts': '♥', 'diamonds': '♦', 'clubs': '♣', 'spades': '♠' };
+    const suitColors = { 'hearts': 'red', 'diamonds': 'red', 'clubs': 'black', 'spades': 'black' };
+    
+    // --------------------
+    // Card game functions
+    // --------------------
+    function initializeDeck() {
+      const newDeck = [];
+      suits.forEach(suit => {
+        values.forEach(value => {
+          newDeck.push({ suit, value, id: `${value}-${suit}` });
+        });
+      });
+      return shuffleDeck(newDeck);
+    }
+    
+    function shuffleDeck(deckToShuffle) {
+      const shuffled = [...deckToShuffle];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      // Extra shuffle pass
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    
+    function startGame() {
+      gameState.deck = initializeDeck();
+      // Deal 10 cards to each player and 1 center card
+      gameState.playerHands[0] = gameState.deck.splice(0, 10);
+      gameState.playerHands[1] = gameState.deck.splice(0, 10);
+      gameState.centerCard = gameState.deck.splice(0, 1)[0];
+      gameState.currentPlayer = 0;
+      gameState.phase = 'play';
+      gameState.cardsHidden = true;
+      gameState.selectedCards = [];
+      renderGame();
+    }
+    
+    // Called when starting game from setup after saving names and max cards selection
+    function saveNamesAndStartGame() {
+      const name1 = document.getElementById('player1Name').value || "Player 1";
+      const name2 = document.getElementById('player2Name').value || "Player 2";
+      gameState.playerNames = [name1, name2];
+      const max = parseInt(document.getElementById('maxCards').value);
+      gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
+      startGame();
+    }
+    
+    function revealCards() {
+      if (gameState.cardsHidden && gameState.phase === 'play') {
+        gameState.cardsHidden = false;
+        renderGame();
+      }
+    }
+    
+    function toggleCardSelection(card) {
+      if (gameState.phase !== 'play' || gameState.cardsHidden) return;
+      // If card already selected, allow deselection
+      const index = gameState.selectedCards.findIndex(c => c.id === card.id);
+      if (index > -1) {
+        gameState.selectedCards.splice(index, 1);
+      } else {
+        // Enforce maximum selection limit
+        if (gameState.selectedCards.length < gameState.maxCards) {
+          gameState.selectedCards.push(card);
+        }
+      }
+      renderGame();
+    }
+    
+    function declareCardsReady() {
+      if (gameState.selectedCards.length === 0) return;
+      gameState.phase = 'guess';
+      renderGame();
+    }
+    
+    function makeGuess(isTruth) {
+      const actuallyMatch = gameState.selectedCards.every(card => card.suit === gameState.centerCard.suit);
+      const correctGuess = (isTruth === actuallyMatch);
+      if (correctGuess) {
+        gameState.phase = 'result';
+        renderGame();
+      } else {
+        gameState.phase = 'mine';
+        startMineGame();
+        renderGame();
+      }
+    }
+    
+    function nextTurn() {
+      const currentHand = [...gameState.playerHands[gameState.currentPlayer]];
+      const selectedIds = new Set(gameState.selectedCards.map(card => card.id));
+      const remainingCards = currentHand.filter(card => !selectedIds.has(card.id));
+      gameState.playerHands[gameState.currentPlayer] = remainingCards;
+      gameState.selectedCards = [];
+      // Win condition: if the active player empties their hand, they win.
+      if (gameState.playerHands[gameState.currentPlayer].length === 0) {
+        gameState.phase = 'gameover';
+        gameState.winner = gameState.currentPlayer;
+        renderGame();
+        return;
+      }
+      // Switch players
+      gameState.currentPlayer = gameState.currentPlayer === 0 ? 1 : 0;
+      gameState.showSwitch = true;
+      gameState.cardsHidden = true;
+      renderGame();
+      setTimeout(() => {
+        gameState.showSwitch = false;
+        gameState.phase = 'play';
+        renderGame();
+      }, 1500);
+    }
+    
+    // --------------------
+    // Mine game functions (replacing wheel spin)
+    // --------------------
+    function startMineGame() {
+      // Use the current player's mine count
+      const currentMines = gameState.playerMines[gameState.currentPlayer];
+      gameState.minePosition = Math.floor(Math.random() * currentMines);
+      gameState.mineRevealed = false;
+      gameState.mineMessage = '';
+    }
+    
+    function createMineField() {
+      const container = document.getElementById('mineField');
+      if (!container) return;
+      container.innerHTML = '';
+      const currentMines = gameState.playerMines[gameState.currentPlayer];
+      for (let i = 0; i < currentMines; i++) {
+        const diamond = document.createElement('div');
+        diamond.className = 'diamond';
+        diamond.dataset.index = i;
+        diamond.addEventListener('click', handleMineClick);
+        container.appendChild(diamond);
+      }
+    }
+    
+    function handleMineClick(e) {
+      if (gameState.mineRevealed) return;
+      const index = parseInt(e.target.dataset.index);
+      const currentMines = gameState.playerMines[gameState.currentPlayer];
+      
+      if (index === gameState.minePosition) {
+        // Lose diamond clicked – show popup and then return to start screen
+        e.target.classList.add('mine');
+        gameState.mineRevealed = true;
+        gameState.mineMessage = 'You found the mine! Game over!';
+        renderGame();
+        
+        // Show a popup with "You Lost" message and note the small bug.
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+        overlay.innerHTML = `
+          <div class="overlay-content">
+            <h2>You Lost!</h2>
+            <p>You hit the losing diamond!</p>
+            <p><small>Note: There is a small bug where it keeps saying game over repeatedly, but that's ok for now.</small></p>
+            <button class="button" onclick="gameState.phase='setup'; renderGame();">Play Again</button>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => {
+          // Remove the popup and return to the start screen
+          document.body.removeChild(overlay);
+          gameState.phase = 'setup';
+          renderGame();
+        }, 3000);
+      } else {
+        // Safe diamond clicked: update the current player's mine count and proceed to next turn
+        gameState.playerMines[gameState.currentPlayer]--;
+        gameState.mineMessage = 'Safe! ' + gameState.playerMines[gameState.currentPlayer] + ' diamonds remaining.';
+        // Remove the clicked diamond from the display
+        e.target.remove();
+        renderGame();
+        setTimeout(() => {
+          nextTurn();
+        }, 1500);
+      }
+    }
+    
+    // --------------------
+    // Rendering functions
+    // --------------------
+    function renderGame() {
+      const gameElement = document.getElementById('game');
+      let content = '';
+      
+      if (gameState.phase === 'setup') {
+        content = `
+          <div class="game-setup">
+            <h1 class="title">Card Bluff Roulette</h1>
+            <div class="section">
+              <h2 class="subtitle">How to Play:</h2>
+              <ul class="rules" style="line-height:1.6; margin-bottom:20px;">
+                <li>Each player gets 10 cards and there's one center card.</li>
+                <li>The active player selects cards from their hand and clicks "Ready".</li>
+                <li>The opponent then guesses if the selected cards match the center card's suit.</li>
+                <li>If the guess is wrong, the guessing player faces the Mine Challenge.</li>
+                <li>Each player starts with their own set of 6 diamonds for the Mine Challenge.</li>
+                <li>If you click a safe diamond, it is removed from your set and the round immediately ends as safe.</li>
+                <li>If you click the lose diamond, you lose the game and return to the start screen.</li>
+                <li>You also win if you empty your hand of cards.</li>
+              </ul>
+              <div class="input-container">
+                <input id="player1Name" type="text" placeholder="Player 1 Name" value="Player 1">
+                <input id="player2Name" type="text" placeholder="Player 2 Name" value="Player 2">
+                <input id="maxCards" type="number" placeholder="Max Cards to Select (max 10)" value="10" min="1" max="10">
+                <button class="button" onclick="saveNamesAndStartGame()">Start Game</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        content = `<div class="game-board">
+          ${gameState.showSwitch ? renderSwitchAnimation() : ''}
+          ${(gameState.cardsHidden && gameState.phase === 'play' && !gameState.showSwitch) ? renderRevealPrompt() : ''}
+          <div class="section">
+            <div class="player-info">
+              <div>${gameState.playerNames[0]} Cards: ${gameState.playerHands[0].length}</div>
+              <div>${gameState.playerNames[1]} Cards: ${gameState.playerHands[1].length}</div>
+            </div>
+            <div class="center-area text-center">
+              <div class="center-card-container">
+                <div class="center-card-label">Center Card</div>
+                <div class="center-card-wrapper">
+                  ${renderCard(gameState.centerCard, true)}
+                </div>
+              </div>
+            </div>
+            <div class="text-center">
+              ${renderGameStatus()}
+            </div>
+          </div>`;
+          
+        if (gameState.phase === 'play') {
+          content += `
+            <div class="section hand-container">
+              <h3>Your Hand: ${gameState.playerHands[gameState.currentPlayer].length} Cards</h3>
+              ${gameState.cardsHidden ? renderCardStack() : renderPlayerHand()}
+              ${renderActionButtons()}
+            </div>
+          `;
+        }
+        
+        if (gameState.phase === 'guess') {
+          content += `
+            <div class="section">
+              <h3 class="text-center">${gameState.playerNames[gameState.currentPlayer === 0 ? 1 : 0]}'s Turn to Guess</h3>
+              <div class="text-center">
+                <p>Selected cards:</p>
+                <div class="hand-area">
+                  ${Array(gameState.selectedCards.length).fill(renderCardBack()).join('')}
+                </div>
+                <p>${gameState.playerNames[gameState.currentPlayer]}'s selected ${gameState.selectedCards.length} card${gameState.selectedCards.length > 1 ? 's' : ''}.</p>
+              </div>
+              <div class="button-container">
+                <button class="button green" onclick="makeGuess(true)">Cards MATCH Center</button>
+                <button class="button red" onclick="makeGuess(false)">Cards DON'T MATCH</button>
+              </div>
+            </div>
+          `;
+        }
+        
+        if (gameState.phase === 'result') {
+          content += `
+            <div class="section">
+              <h3 class="text-center">Round Complete</h3>
+              <button class="button" onclick="nextTurn()">Next Turn</button>
+            </div>
+          `;
+        }
+        
+        if (gameState.phase === 'mine') {
+          content += `
+            <div class="section">
+              <h3 class="text-center subtitle">Mine Challenge!</h3>
+              <p class="text-center">Click on diamonds to remove safe ones.<br>
+              Avoid the mine and clear your safe diamonds to win!</p>
+              <div class="mine-container" id="mineField"></div>
+              ${gameState.mineMessage ? `<div class="mine-message">${gameState.mineMessage}</div>` : ''}
+            </div>
+          `;
+        }
+        
+        if (gameState.phase === 'gameover') {
+          content += `
+            <div class="overlay">
+              <div class="overlay-content">
+                <h2>${gameState.playerNames[gameState.winner]} Wins!</h2>
+                <p>They've played all their cards!</p>
+                <button class="button" onclick="gameState.phase='setup'; renderGame();">Play Again</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      gameElement.innerHTML = content;
+      
+      // In mine phase, create the mine field.
+      if (gameState.phase === 'mine') {
+        createMineField();
+      }
+      
+      if (gameState.cardsHidden && gameState.phase === 'play') {
+        gameElement.onclick = revealCards;
+      } else {
+        gameElement.onclick = null;
+      }
+    }
+    
+    function renderCard(card, isCenter = false, isSelected = false) {
+      if (!card) return '';
+      const symbol = suitSymbols[card.suit];
+      const colorClass = suitColors[card.suit];
+      const centerClass = isCenter ? 'center-card' : '';
+      const selectedClass = isSelected ? 'selected' : '';
+      let onClick = '';
+      if (!isCenter && gameState.phase === 'play' && !gameState.cardsHidden) {
+        onClick = `onclick="toggleCardSelection({suit: '${card.suit}', value: '${card.value}', id: '${card.id}'})"`;
+      }
+      return `
+        <div class="card ${centerClass} ${selectedClass}" ${onClick}>
+          <div class="card-value ${colorClass}">${card.value}</div>
+          <div class="card-suit ${colorClass}">${symbol}</div>
+          <div class="card-value bottom ${colorClass}">${card.value}</div>
+        </div>
+      `;
+    }
+    
+    function renderCardBack() {
+      return `
+        <div class="card-back">
+          <div class="card-back-inner">?</div>
+        </div>
+      `;
+    }
+    
+    function renderCardStack() {
+      const handSize = gameState.playerHands[gameState.currentPlayer].length;
+      let stackCards = '';
+      const visibleCards = Math.min(5, handSize);
+      for (let i = 0; i < visibleCards; i++) {
+        stackCards += `<div class="stack-card" style="left: ${i * 5}px; top: ${-i * 2}px; z-index: ${i}"></div>`;
+      }
+      return `<div class="card-stack">${stackCards}<div class="card-counter">${handSize}</div></div>`;
+    }
+    
+    function renderPlayerHand() {
+      const cards = gameState.playerHands[gameState.currentPlayer];
+      const selectedIds = gameState.selectedCards.map(card => card.id);
+      return `<div class="hand-area">${cards.map(card => renderCard(card, false, selectedIds.includes(card.id))).join('')}</div>`;
+    }
+    
+    function renderActionButtons() {
+      if (gameState.selectedCards.length > 0 && !gameState.cardsHidden && gameState.phase === 'play') {
+        return `<div class="button-container">
+                  <button class="button" onclick="declareCardsReady()">Ready</button>
+                </div>`;
+      }
+      return '';
+    }
+    
+    function renderGameStatus() {
+      if (gameState.phase === 'play') {
+        return `<p>${gameState.playerNames[gameState.currentPlayer]}'s turn – select cards (max ${gameState.maxCards}) and click Ready</p>`;
+      }
+      if (gameState.phase === 'guess') {
+        return `<p>${gameState.playerNames[gameState.currentPlayer === 0 ? 1 : 0]} – do these cards match the center suit?</p>`;
+      }
+      return '';
+    }
+    
+    function renderSwitchAnimation() {
+      return `
+        <div class="overlay switch-animation">
+          <div class="switch-text">SWITCH!</div>
+        </div>
+      `;
+    }
+    
+    function renderRevealPrompt() {
+      return `
+        <div class="overlay">
+          <div class="overlay-content">
+            <h2>${gameState.playerNames[gameState.currentPlayer]}'s Turn</h2>
+            <p>Click to reveal your ${gameState.playerHands[gameState.currentPlayer].length} cards</p>
+            <p><small>Make sure the other player isn't looking!</small></p>
+          </div>
+        </div>
+      `;
+    }
+    
+    // --------------------
+    // Initialize game on load
+    // --------------------
+    renderGame();
+    document.addEventListener('click', (e) => {
+      if (gameState.cardsHidden && gameState.phase === 'play' && !gameState.showSwitch) {
+        revealCards();
+      }
+    });
+  </script>
+</body>
+</html>
