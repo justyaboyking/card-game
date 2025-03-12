@@ -210,6 +210,8 @@
     .card.center-card {
       border-color: #ffd700;
       box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+      transform: scale(1.1);
+      margin: 0 auto;
     }
     .card-back {
       width: 80px;
@@ -384,6 +386,16 @@
       gameState.phase = 'play';
       gameState.cardsHidden = true;
       gameState.selectedCards = [];
+      // Reset diamonds for both players
+      gameState.playerMines = [6, 6];
+      renderGame();
+    }
+    
+    // New function to end the game and return to setup
+    function endGame() {
+      // Reset diamonds for both players
+      gameState.playerMines = [6, 6];
+      gameState.phase = 'setup';
       renderGame();
     }
     
@@ -508,7 +520,7 @@
             <h2>You Lost!</h2>
             <p>You hit the losing diamond!</p>
             <p><small>Note: There is a small bug where it keeps saying game over repeatedly, but that's ok for now.</small></p>
-            <button class="button" onclick="gameState.phase='setup'; renderGame();">Play Again</button>
+            <button class="button" onclick="gameState.phase='setup'; gameState.playerMines=[6,6]; renderGame();">Play Again</button>
           </div>
         `;
         document.body.appendChild(overlay);
@@ -517,6 +529,8 @@
           // Remove the popup and return to the start screen
           document.body.removeChild(overlay);
           gameState.phase = 'setup';
+          // Reset diamonds for both players
+          gameState.playerMines = [6, 6];
           renderGame();
         }, 3000);
       } else {
