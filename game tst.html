@@ -312,10 +312,25 @@
       color: #38b000;
       animation: fadeIn 0.5s ease;
     }
+    /* Extra spacing for center card */
+    .center-card-wrapper {
+      margin: 20px 0;
+    }
+    /* End Game button styling positioned at left bottom */
+    .end-game-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 200;
+    }
   </style>
 </head>
 <body>
+  <!-- Game container -->
   <div id="game" class="container"></div>
+  <!-- Fixed End Game button -->
+  <button id="endGameBtn" class="button end-game-button" onclick="endGame()">End Game</button>
+  
   <script>
     // --------------------
     // Game state & variables
@@ -391,9 +406,8 @@
       renderGame();
     }
     
-    // New function to end the game and return to setup
+    // New function to end the game and return to setup, resetting diamonds
     function endGame() {
-      // Reset diamonds for both players
       gameState.playerMines = [6, 6];
       gameState.phase = 'setup';
       renderGame();
@@ -512,7 +526,7 @@
         gameState.mineMessage = 'You found the mine! Game over!';
         renderGame();
         
-        // Show a popup with "You Lost" message and note the small bug.
+        // Show a popup with "You Lost" message.
         const overlay = document.createElement('div');
         overlay.className = 'overlay';
         overlay.innerHTML = `
