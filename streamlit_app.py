@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Apply custom CSS to maximize space
+# Apply custom CSS to maximize space and prevent flickering
 st.markdown("""
 <style>
     .main .block-container {
@@ -22,6 +22,19 @@ st.markdown("""
     }
     .stApp {
         background-color: #080b14;
+    }
+    iframe {
+        width: 100%;
+        height: 100vh;
+        border: none;
+    }
+    /* Prevent Streamlit from handling clicks outside specific UI elements */
+    .element-container {
+        pointer-events: none;
+    }
+    /* But allow pointer events on the iframe itself */
+    iframe {
+        pointer-events: auto !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -35,8 +48,40 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Display the HTML content using a custom component with increased height
-    components.html(html_content, height=1000, scrolling=False)
+    # Add a wrapper to the HTML content to prevent event bubbling
+    wrapped_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body, html {{
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }}
+            #game-container {{
+                width: 100%;
+                height: 100vh;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="game-container">
+            {html_content}
+        </div>
+        <script>
+            // Prevent event bubbling to Streamlit
+            document.getElementById('game-container').addEventListener('click', function(e) {{
+                e.stopPropagation();
+            }}, true);
+        </script>
+    </body>
+    </html>
+    """
+    
+    # Display the wrapped HTML content
+    components.html(wrapped_html, height=1000, scrolling=False)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
