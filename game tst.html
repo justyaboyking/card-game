@@ -479,6 +479,20 @@
       }
       // Switch players
       gameState.currentPlayer = gameState.currentPlayer === 0 ? 1 : 0;
+      
+      // When it's Player 1's turn again, change the center card to a fully random one.
+      if (gameState.currentPlayer === 0) {
+        if (gameState.deck.length > 0) {
+          const randomIndex = Math.floor(Math.random() * gameState.deck.length);
+          gameState.centerCard = gameState.deck.splice(randomIndex, 1)[0];
+        } else {
+          // If deck is empty, reinitialize the deck and then draw a random card.
+          gameState.deck = initializeDeck();
+          const randomIndex = Math.floor(Math.random() * gameState.deck.length);
+          gameState.centerCard = gameState.deck.splice(randomIndex, 1)[0];
+        }
+      }
+      
       gameState.showSwitch = true;
       gameState.cardsHidden = true;
       renderGame();
