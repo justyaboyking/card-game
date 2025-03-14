@@ -480,13 +480,30 @@
       left: 20px;
       z-index: 200;
     }
+    
+    .music-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 200;
+      font-size: 18px;
+      padding: 10px 15px;
+      border-radius: 50%;
+    }
   </style>
 </head>
 <body>
+  <!-- Audio element for background music -->
+  <audio id="backgroundMusic" loop>
+    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">
+    Je browser ondersteunt het audio-element niet.
+  </audio>
   <!-- Game container -->
   <div id="game" class="container"></div>
   <!-- Fixed End Game button -->
   <button id="endGameBtn" class="button end-game-button" onclick="endGame()">End Game</button>
+  <!-- Music control button -->
+  <button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>
   
   <script>
     // --------------------
@@ -611,13 +628,53 @@
       renderGame();
     }
     
-    // Called when starting game from setup after saving names and max cards selection
+    // --------------------
+    // Audio functions
+    // --------------------
+    let musicPlaying = false;
+    
+    function toggleMusic() {
+      const backgroundMusic = document.getElementById('backgroundMusic');
+      const musicButton = document.getElementById('musicToggle');
+      
+      if (musicPlaying) {
+        backgroundMusic.pause();
+        musicButton.innerHTML = '🔇';
+      } else {
+        backgroundMusic.volume = 0.3;
+        backgroundMusic.play()
+          .then(() => {
+            console.log("Music started playing");
+          })
+          .catch(error => {
+            console.error("Error playing music:", error);
+          });
+        musicButton.innerHTML = '🔊';
+      }
+      
+      musicPlaying = !musicPlaying;
+    }
+    
+    // Attempt to start music when game starts
     function saveNamesAndStartGame() {
       const name1 = document.getElementById('player1Name').value || "Player 1";
       const name2 = document.getElementById('player2Name').value || "Player 2";
       gameState.playerNames = [name1, name2];
       const max = parseInt(document.getElementById('maxCards').value);
       gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
+      
+      // Try to start music
+      const backgroundMusic = document.getElementById('backgroundMusic');
+      backgroundMusic.volume = 0.3;
+      backgroundMusic.play()
+        .then(() => {
+          musicPlaying = true;
+          document.getElementById('musicToggle').innerHTML = '🔊';
+        })
+        .catch(error => {
+          console.log("Autoplay prevented:", error);
+        });
+      
       startGame();
     }
     
