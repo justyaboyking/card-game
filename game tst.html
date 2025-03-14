@@ -285,7 +285,6 @@
       position: relative;
       margin: 5px;
       cursor: pointer;
-      transition: all 0.2s ease;
       animation: dealCard 0.3s ease-out backwards;
     }
     .hand-area .card:nth-child(1) { animation-delay: 0.05s; }
@@ -299,14 +298,9 @@
     .hand-area .card:nth-child(9) { animation-delay: 0.29s; }
     .hand-area .card:nth-child(10) { animation-delay: 0.32s; }
     
-    .card:hover { 
-      transform: translateY(-4px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
     .card.selected {
       border-color: #00b4d8;
-      box-shadow: 0 0 5px 2px rgba(0, 180, 216, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
-      transform: translateY(-6px);
+      box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.5);
     }
     .card.center-card {
       border-color: #ffd700;
@@ -652,17 +646,9 @@
     function declareCardsReady() {
       if (gameState.selectedCards.length === 0) return;
       
-      // Card flip animation before moving to guess phase
-      const selectedCardElements = document.querySelectorAll('.card.selected');
-      selectedCardElements.forEach(card => {
-        card.style.animation = 'flipCard 0.3s forwards';
-      });
-      
-      // Shorter delay for phase change
-      setTimeout(() => {
-        gameState.phase = 'guess';
-        renderGame();
-      }, 350);
+      // Direct phase change without animations
+      gameState.phase = 'guess';
+      renderGame();
     }
     
     function makeGuess(isTruth) {
