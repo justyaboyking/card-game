@@ -89,10 +89,12 @@
     }
     .button.green:hover { box-shadow: 0 6px 16px rgba(56, 176, 0, 0.5); }
     .button.red {
-      background: linear-gradient(135deg, #d00000, #dc2f02);
-      box-shadow: 0 4px 12px rgba(208, 0, 0, 0.3);
+      background: linear-gradient(135deg, #ffffff, #f0f0f0);  /* Veranderd naar wit */
+      color: #333;  /* Donkerdere tekst voor leesbaarheid */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ddd;
     }
-    .button.red:hover { box-shadow: 0 6px 16px rgba(208, 0, 0, 0.5); }
+    .button.red:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
     .input-container {
       display: flex;
       flex-direction: column;
@@ -454,10 +456,33 @@
     function makeGuess(isTruth) {
       const actuallyMatch = gameState.selectedCards.every(card => card.suit === gameState.centerCard.suit);
       const correctGuess = (isTruth === actuallyMatch);
+      
       if (correctGuess) {
+        // De gok was correct
+        
+        // Als de gok was dat kaarten NIET overeenkomen (bluf opgemerkt) én dat was correct (het was een bluf)
+        // voeg dan kaarten toe aan de hand van de actieve speler
+        if (isTruth === false && actuallyMatch === false) {  // Gok: "KOMEN NIET OVEREEN" en ze kwamen inderdaad niet overeen
+          // Voeg kaarten toe aan de hand van de actieve speler gelijk aan het aantal dat ze hebben gespeeld
+          const numCardsToAdd = gameState.selectedCards.length;
+          
+          for (let i = 0; i < numCardsToAdd; i++) {
+            // Als het deck leeg is, opnieuw initialiseren
+            if (gameState.deck.length === 0) {
+              gameState.deck = initializeDeck();
+            }
+            
+            // Trek een willekeurige kaart en voeg deze toe aan de hand van de speler
+            const randomIndex = Math.floor(Math.random() * gameState.deck.length);
+            const newCard = gameState.deck.splice(randomIndex, 1)[0];
+            gameState.playerHands[gameState.currentPlayer].push(newCard);
+          }
+        }
+        
         gameState.phase = 'result';
         renderGame();
       } else {
+        // De gok was onjuist - de gokker moet nu de mine challenge aangaan
         gameState.phase = 'mine';
         startMineGame();
         renderGame();
@@ -591,6 +616,7 @@
                 <li>Each player gets 10 cards and there's one center card.</li>
                 <li>The active player selects cards from their hand and clicks "Ready".</li>
                 <li>The opponent then guesses if the selected cards match the center card's suit.</li>
+                <li>If the active player bluffs (claims match when they don't) and is caught, they get random cards equal to the number they played.</li>
                 <li>If the guess is wrong, the guessing player faces the Mine Challenge.</li>
                 <li>Each player starts with their own set of 6 diamonds for the Mine Challenge.</li>
                 <li>If you click a safe diamond, it is removed from your set and the round immediately ends as safe.</li>
