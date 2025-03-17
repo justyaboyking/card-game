@@ -58,16 +58,39 @@ try:
         f'<source src="{audio_url}" type="audio/mpeg">'
     )
     
-    # Make sure the music button is present in the game interface
-    if '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>' not in html_content:
-        # If the button is missing, add it back before the closing body tag
-        html_content = html_content.replace(
-            '</body>',
-            '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button></body>'
-        )
+    # Remove the original music button (but keep the endGameBtn)
+    html_content = html_content.replace(
+        '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>',
+        ''
+    )
+    
+    # Add auto-start for the music
+    modified_html = html_content.replace(
+        '</head>',
+        """
+        <script>
+        // Auto-start music after user interaction
+        document.addEventListener('click', function startAudio() {
+            const audio = document.getElementById('backgroundMusic');
+            if (audio) {
+                audio.volume = 0.3;
+                audio.play()
+                    .then(() => {
+                        console.log("Music started successfully");
+                    })
+                    .catch(e => {
+                        console.error("Failed to play music:", e);
+                    });
+                document.removeEventListener('click', startAudio);
+            }
+        }, { once: true });
+        </script>
+        </head>
+        """
+    )
     
     # Display the HTML content
-    components.html(html_content, height=800, scrolling=True)
+    components.html(modified_html, height=800, scrolling=True)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
