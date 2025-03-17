@@ -63,7 +63,8 @@ st.markdown("""
 # Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
-# Set the HTML file path
+# Set the current directory path
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Autoplay background music (hidden)
 # Convert local audio file to base64 for embedding
@@ -90,7 +91,7 @@ else:
     # Fallback to remote URL
     autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
 
-# Set the HTML file path
+# Set the HTML file path (current_dir is already defined above)
 html_file_path = os.path.join(current_dir, "game tst.html")
 
 # Read the HTML file with error handling
