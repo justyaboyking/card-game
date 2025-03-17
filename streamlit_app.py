@@ -50,7 +50,7 @@ try:
         html_content = f.read()
     
     # Direct audio embed URL
-    audio_url = "https://s31.aconvert.com/convert/p3r68-cdx67/xwo2w-3rju8.mp3"
+    audio_url = "https://screenapp.io/app/#/shared/EIjBavQsmW"
     
     # Replace the original audio source with our new URL
     html_content = html_content.replace(
