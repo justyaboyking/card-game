@@ -21,13 +21,13 @@ def autoplay_audio(file_url):
         </audio>
         <script>
             // Force audio to play
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function() {{  
                 const audioElements = document.getElementsByTagName('audio');
-                for(let i = 0; i < audioElements.length; i++) {
+                for(let i = 0; i < audioElements.length; i++) {{
                     const audio = audioElements[i];
                     audio.play().catch(e => console.log('Audio play failed:', e));
-                }
-            });
+                }}
+            }});
         </script>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
