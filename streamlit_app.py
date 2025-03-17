@@ -34,23 +34,6 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
-    .audio-controls {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-    .screen-app-button {
-        background: linear-gradient(135deg, #00b4d8, #0096c7);
-        color: white;
-        border: none;
-        border-radius: 30px;
-        padding: 8px 15px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
-        margin: 0 5px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,42 +41,31 @@ st.markdown("""
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
 
-# Add a title and a link to the ScreenApp
+# Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
-
-# Add a link to open ScreenApp in a new tab
-st.markdown("""
-<div class="audio-controls">
-    <a href="https://screenapp.io/app/#/shared/EIjBavQsmW" target="_blank">
-        <button class="screen-app-button">🎵 Play Background Music</button>
-    </a>
-</div>
-""", unsafe_allow_html=True)
 
 # Read the HTML file with error handling
 try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Remove the old audio element and music button to avoid conflicts
+    # Direct audio embed URL from Vocaroo
+    audio_url = "https://voca.ro/1jZWl8sP5fg6"
+    
+    # Replace the original audio source with the Vocaroo URL
     html_content = html_content.replace(
-        '<!-- Audio element for background music -->\n  <audio id="backgroundMusic" loop>\n    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">\n    Je browser ondersteunt het audio-element niet.\n  </audio>',
-        '<!-- Audio is now handled separately -->'
+        '<source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">',
+        f'<source src="{audio_url}" type="audio/mpeg">'
     )
     
-    html_content = html_content.replace(
-        '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>',
-        ''
-    )
-    
-    # Update the music-related JavaScript functions to avoid console errors
-    if 'function toggleMusic()' in html_content:
+    # Make sure the music button is properly configured
+    if '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>' not in html_content:
         html_content = html_content.replace(
-            'function toggleMusic() {',
-            'function toggleMusic() { return; // Function disabled, audio handled externally'
+            '<!-- Fixed End Game button -->',
+            '<!-- Music control button -->\n  <button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>\n  <!-- Fixed End Game button -->'
         )
     
-    # Display the modified HTML content
+    # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
     
 except FileNotFoundError:
