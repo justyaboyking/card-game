@@ -34,6 +34,20 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
+    .audio-button {
+        background: linear-gradient(135deg, #00b4d8, #0096c7);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 8px 15px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        margin: 0 auto 10px auto;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,93 +55,28 @@ st.markdown("""
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
 
-# Add a simple title
+# Add a title and audio button
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
+
+# Add a simple audio player in Streamlit
+audio_file = "https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3"
+st.audio(audio_file, format='audio/mp3', start_time=0)
 
 # Read the HTML file with error handling
 try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Direct audio embed URL
-    audio_url = "https://screenapp.io/app/#/shared/EIjBavQsmW"
-    
-    # Replace the original audio source with our new URL
+    # Remove the old audio element and music button to avoid conflicts
     html_content = html_content.replace(
-        '<source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">',
-        f'<source src="{audio_url}" type="audio/mpeg">'
+        '<!-- Audio element for background music -->\n  <audio id="backgroundMusic" loop>\n    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">\n    Je browser ondersteunt het audio-element niet.\n  </audio>',
+        '<!-- Audio is now handled by Streamlit -->'
     )
     
-    # Add the toggleMusic function if it's not already there
-    music_function = """
-    // --------------------
-    // Audio functions
-    // --------------------
-    let musicPlaying = false;
-    
-    function toggleMusic() {
-      const backgroundMusic = document.getElementById('backgroundMusic');
-      const musicButton = document.getElementById('musicToggle');
-      
-      if (musicPlaying) {
-        backgroundMusic.pause();
-        musicButton.innerHTML = '🔇';
-      } else {
-        backgroundMusic.volume = 0.3;
-        backgroundMusic.play()
-          .then(() => {
-            console.log("Music started playing");
-          })
-          .catch(error => {
-            console.error("Error playing music:", error);
-          });
-        musicButton.innerHTML = '🔊';
-      }
-      
-      musicPlaying = !musicPlaying;
-    }
-    """
-    
-    # Make sure the music button is definitely at the right place
-    # First, remove any existing music button
-    if '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>' in html_content:
-        html_content = html_content.replace(
-            '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>',
-            ''
-        )
-    
-    # Then add the button back in the right place (before the endGameBtn)
     html_content = html_content.replace(
-        '<!-- Fixed End Game button -->',
-        '<!-- Music control button -->\n  <button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>\n  <!-- Fixed End Game button -->'
+        '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>',
+        ''
     )
-    
-    # Make sure the music button style is defined
-    music_button_style = """
-    .music-button {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 200;
-      font-size: 18px;
-      padding: 10px 15px;
-      border-radius: 50%;
-    }
-    """
-    
-    # Add the style if it's not already there
-    if '.music-button {' not in html_content:
-        html_content = html_content.replace(
-            '</style>',
-            f'{music_button_style}</style>'
-        )
-    
-    # Make sure the toggleMusic function is in the JavaScript
-    if 'function toggleMusic()' not in html_content:
-        html_content = html_content.replace(
-            '<script>',
-            f'<script>\n{music_function}'
-        )
     
     # Display the modified HTML content
     components.html(html_content, height=800, scrolling=True)
