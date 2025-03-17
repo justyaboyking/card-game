@@ -72,24 +72,60 @@ def get_base64_audio(file_path):
     try:
         with open(file_path, "rb") as f:
             data = f.read()
+            if len(data) < 1000:  # Check if file is too small (likely invalid)
+                st.warning(f"The audio file at {file_path} appears to be invalid or too small ({len(data)} bytes). Please replace it with a valid MP3 file.")
+                return None
             return base64.b64encode(data).decode()
     except Exception as e:
         st.error(f"Error loading audio file: {str(e)}")
         return None
 
 # Try to use local file first, fall back to remote URL if not available
+shadows_shuffle_path = os.path.join(current_dir, "Shadows Shuffle.mp3")
 music_file_path = os.path.join(current_dir, "background_music.mp3")
-if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 0:
-    audio_base64 = get_base64_audio(music_file_path)
+
+# First try to use Shadows Shuffle.mp3
+if os.path.exists(shadows_shuffle_path) and os.path.getsize(shadows_shuffle_path) > 1000:
+    audio_base64 = get_base64_audio(shadows_shuffle_path)
     if audio_base64:
         audio_url = f"data:audio/mp3;base64,{audio_base64}"
         autoplay_audio(audio_url)
+        st.success("Playing music from 'Shadows Shuffle.mp3'")
     else:
-        # Fallback to remote URL
-        autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+        # Fall back to background_music.mp3
+        if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 1000:
+            audio_base64 = get_base64_audio(music_file_path)
+            if audio_base64:
+                audio_url = f"data:audio/mp3;base64,{audio_base64}"
+                autoplay_audio(audio_url)
+                st.success("Playing music from 'background_music.mp3'")
+            else:
+                # Fallback to remote URL
+                st.warning("Could not load local MP3 files. Using fallback music instead.")
+                autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+        else:
+            # Fallback to remote URL with explanation
+            st.warning("Local MP3 files not found or invalid. Using fallback music instead.")
+            autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
 else:
-    # Fallback to remote URL
-    autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+    # Try background_music.mp3 as fallback
+    if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 1000:
+        audio_base64 = get_base64_audio(music_file_path)
+        if audio_base64:
+            audio_url = f"data:audio/mp3;base64,{audio_base64}"
+            autoplay_audio(audio_url)
+            st.success("Playing music from 'background_music.mp3'")
+        else:
+            # Fallback to remote URL
+            st.warning("Could not load local MP3 file. Using fallback music instead.")
+            autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+    else:
+        # Fallback to remote URL with explanation
+        if not os.path.exists(music_file_path):
+            st.warning("Local MP3 files not found. Using fallback music instead.")
+        elif os.path.getsize(music_file_path) <= 1000:
+            st.warning(f"The MP3 file is too small ({os.path.getsize(music_file_path)} bytes) and appears to be invalid. Using fallback music instead.")
+        autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
 
 # Set the HTML file path (current_dir is already defined above)
 html_file_path = os.path.join(current_dir, "game tst.html")
