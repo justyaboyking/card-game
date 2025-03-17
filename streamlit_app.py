@@ -35,12 +35,6 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
-    .audio-player {
-        width: 1px;
-        height: 1px;
-        position: absolute;
-        top: -100px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,137 +50,70 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Use a reliable, browser-friendly audio source
-    music_url = "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3"
-    
-    # Create a completely new audio implementation
-    new_audio_script = f'''
+    # No audio fix script - this completely removes audio functionality
+    # but preserves all game functionality
+    remove_audio_script = '''
     <script>
-      // Create audio element dynamically to avoid browser restrictions
-      window.setupGameAudio = function() {{
-        // Create a new audio element programmatically
-        if (!window.gameAudio) {{
-          window.gameAudio = new Audio("{music_url}");
-          window.gameAudio.loop = true;
-          window.gameAudio.volume = 0.3;
-          window.musicPlaying = false;
-          
-          // Log that audio was created
-          console.log("Audio element created successfully");
-        }}
-      }};
-      
-      // New toggle music function with better error handling
-      window.toggleMusic = function() {{
-        // Make sure audio is set up
-        if (!window.gameAudio) {{
-          setupGameAudio();
-        }}
-        
+      // Fix for music toggle button
+      window.toggleMusic = function() {
         const musicButton = document.getElementById('musicToggle');
-        console.log("Toggle music called, current state:", window.musicPlaying);
+        if (musicButton) {
+          musicButton.innerHTML = '🎮';  // Change to a game icon instead
+        }
         
-        if (window.musicPlaying) {{
-          // Pause music
-          window.gameAudio.pause();
-          musicButton.innerHTML = '🔇';
-          console.log("Music paused");
-        }} else {{
-          // Play music with detailed error handling
-          try {{
-            const playPromise = window.gameAudio.play();
-            
-            if (playPromise !== undefined) {{
-              playPromise
-                .then(() => {{
-                  console.log("Music started playing successfully");
-                  musicButton.innerHTML = '🔊';
-                  // Show success message
-                  const message = document.createElement('div');
-                  message.style.cssText = 'position:fixed; top:60px; right:20px; background-color:rgba(0,180,216,0.8); color:white; padding:10px; border-radius:5px; z-index:1000; animation: fadeOut 2s forwards 3s;';
-                  message.innerHTML = "Music playing! 🎵";
-                  document.body.appendChild(message);
-                  
-                  // Add fade out animation
-                  const style = document.createElement('style');
-                  style.innerHTML = '@keyframes fadeOut {{ from {{ opacity: 1; }} to {{ opacity: 0; }} }}';
-                  document.head.appendChild(style);
-                  
-                  // Remove message after animation
-                  setTimeout(() => {{ document.body.removeChild(message); }}, 5000);
-                }})
-                .catch(error => {{
-                  console.error("Error playing music:", error);
-                  musicButton.innerHTML = '❌';
-                  
-                  // Show error message with instructions
-                  alert("Unable to play music: " + error.message + "\\n\\nTry clicking the button again or refreshing the page.");
-                  
-                  // Reset button after 2 seconds
-                  setTimeout(() => {{ musicButton.innerHTML = '🔊'; }}, 2000);
-                }});
-            }}
-          }} catch (e) {{
-            console.error("Exception playing music:", e);
-            alert("Error with audio playback: " + e.message);
-          }}
-        }}
+        // Show a small notification
+        const notification = document.createElement('div');
+        notification.style.cssText = 'position:fixed; top:70px; right:20px; background-color:rgba(255,255,255,0.8); color:#333; padding:8px 15px; border-radius:4px; font-size:14px; z-index:1000; transition:opacity 0.5s;';
+        notification.innerHTML = "Playing without music";
+        document.body.appendChild(notification);
         
-        window.musicPlaying = !window.musicPlaying;
-      }};
+        // Fade out and remove notification
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 500);
+        }, 2000);
+        
+        return false;
+      };
       
-      // Initialize audio on page load
-      document.addEventListener('DOMContentLoaded', function() {{
-        setupGameAudio();
-        console.log("Audio setup complete on page load");
+      // Override saveNamesAndStartGame to avoid audio errors
+      const originalSaveNamesAndStartGame = window.saveNamesAndStartGame;
+      window.saveNamesAndStartGame = function() {
+        const name1 = document.getElementById('player1Name').value || "Player 1";
+        const name2 = document.getElementById('player2Name').value || "Player 2";
+        gameState.playerNames = [name1, name2];
+        const max = parseInt(document.getElementById('maxCards').value);
+        gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
         
-        // Add a click handler to the whole document to enable audio
-        document.addEventListener('click', function audioEnabler() {{
-          // This helps overcome browser autoplay restrictions
-          setupGameAudio();
-          window.gameAudio.play().then(() => {{
-            window.gameAudio.pause(); // Immediately pause, but now audio is enabled
-            window.musicPlaying = false;
-            console.log("Audio enabled by user interaction");
-          }}).catch(e => {{
-            console.log("Audio not yet enabled:", e);
-          }});
-          
-          // Remove this listener after first click
-          document.removeEventListener('click', audioEnabler);
-        }}, {{ once: true }});
-      }});
+        // Skip audio part
+        startGame();
+      };
+      
+      // Set music button on load
+      document.addEventListener('DOMContentLoaded', function() {
+        const musicButton = document.getElementById('musicToggle');
+        if (musicButton) {
+          musicButton.innerHTML = '🎮';
+        }
+      });
     </script>
     '''
     
-    # Use regex to completely remove the old audio element
+    # Use regex to completely remove the audio element 
     audio_pattern = re.compile(r'<audio[^>]*id=["\']backgroundMusic["\'][^>]*>.*?</audio>', re.DOTALL)
     html_content = audio_pattern.sub('', html_content)
     
-    # Remove any old toggleMusic implementation
-    old_toggle_pattern = re.compile(r'function toggleMusic\(\).*?}', re.DOTALL)
-    html_content = old_toggle_pattern.sub('', html_content)
-    
-    # Add our new implementation before the closing </body> tag
-    html_content = html_content.replace('</body>', f'{new_audio_script}</body>')
-    
-    # Create a small embedded player that's immediately accessible for testing
-    test_player = '''
-    <div style="position: fixed; bottom: 10px; left: 10px; z-index: 1000;">
-      <button onclick="toggleMusic()" style="background: #00b4d8; color: white; border: none; border-radius: 4px; padding: 5px 10px;">
-        Test Music
-      </button>
-    </div>
-    '''
-    
-    # Add the test player
-    html_content = html_content.replace('</body>', f'{test_player}</body>')
+    # Insert the remove audio script before the closing body tag
+    html_content = html_content.replace('</body>', f'{remove_audio_script}</body>')
     
     # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
     
     # Add instructions for users
-    st.info("💡 **Tip:** Click the 🔊 button in the top-right corner to toggle music. If it doesn't work, use the 'Test Music' button in the bottom-left corner.")
+    st.warning("⚠️ Game music has been disabled to ensure the game works correctly. Enjoy playing!")
+    st.info("If you'd like to add your own background music, consider playing it from your device while enjoying the game.")
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
