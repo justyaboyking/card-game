@@ -28,37 +28,52 @@ st.markdown("""
         height: 100vh;
         border: none;
     }
-    .audio-controls {
+    .music-button {
+        background: linear-gradient(135deg, #00b4d8, #0096c7);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 8px 15px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+        display: flex;
+        margin: 0 auto;
+        align-items: center;
+    }
+    .button-container {
+        display: flex;
+        justify-content: center;
         margin-bottom: 10px;
-        text-align: center;
     }
     .title {
         color: #00b4d8;
         text-align: center;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+        font-size: 24px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Add music controls in Streamlit (OUTSIDE the HTML component)
-st.markdown('<div class="title"><h2>Card Bluff Roulette</h2></div>', unsafe_allow_html=True)
-st.markdown('<div class="audio-controls">Game Music:</div>', unsafe_allow_html=True)
-st.audio("https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3", format="audio/mp3")
-
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
+
+# Add a simple audio toggle in Streamlit
+st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
+st.markdown('<div class="button-container"><button id="music-toggle" class="music-button" onclick="toggleMusic()">🔊 Music On/Off</button></div>', unsafe_allow_html=True)
 
 # Read the HTML file with error handling
 try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Modify the HTML to remove the music button and audio container
+    # Remove the original music button
     html_content = html_content.replace('<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>', 
                                         '<!-- Music handled by Streamlit -->')
     
-    # Modify the HTML content to make it work better in an iframe
+    # Modify the HTML to include a direct audio element that can be controlled
     modified_html = f"""
     <!DOCTYPE html>
     <html>
@@ -83,12 +98,56 @@ try:
         </style>
     </head>
     <body>
+        <!-- Embedded audio that's hidden but accessible via JavaScript -->
+        <audio id="gameAudio" loop style="display:none;">
+            <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
+        </audio>
+        
         <div id="game-container">
             {html_content}
         </div>
+        
+        <script>
+            // Function to toggle music from outside the iframe
+            function toggleMusic() {{
+                const audio = document.getElementById('gameAudio');
+                if (audio.paused) {{
+                    audio.volume = 0.3;
+                    audio.play();
+                }} else {{
+                    audio.pause();
+                }}
+            }}
+            
+            // Connect the Streamlit button to the audio toggle
+            window.addEventListener('message', function(e) {{
+                if (e.data.type === 'toggleMusic') {{
+                    toggleMusic();
+                }}
+            }});
+            
+            // Make the toggle function available to parent
+            window.toggleMusic = toggleMusic;
+        </script>
     </body>
     </html>
     """
+    
+    # Add JavaScript to connect the Streamlit button to the iframe
+    st.markdown("""
+    <script>
+        // Function to toggle music in the iframe when the button is clicked
+        function toggleMusic() {
+            const iframe = document.querySelector('iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.toggleMusic();
+            }
+        }
+        
+        // Connect the button to the toggle function
+        document.getElementById('music-toggle').addEventListener('click', toggleMusic);
+    </script>
+    """, unsafe_allow_html=True)
     
     # Display the HTML content
     components.html(modified_html, height=800, scrolling=True)
