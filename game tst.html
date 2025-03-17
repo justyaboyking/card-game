@@ -123,6 +123,22 @@
       flex-wrap: wrap;
       gap: 15px;
     }
+    .main-menu {
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .main-button {
+      width: 200px;
+      font-size: 20px;
+      padding: 15px 30px;
+      margin: 5px 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .main-button:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 10px 25px rgba(0, 180, 216, 0.7);
+    }
     .button {
       background: linear-gradient(135deg, #00b4d8, #0096c7);
       color: white;
@@ -494,9 +510,9 @@
 </head>
 <body>
   <!-- Audio element for background music -->
-  <audio id="backgroundMusic" loop>
-    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">
-    Je browser ondersteunt het audio-element niet.
+  <audio id="backgroundMusic" loop preload="auto">
+    <source src="background_music.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
   </audio>
   <!-- Game container -->
   <div id="game" class="container"></div>
@@ -625,6 +641,28 @@
     function endGame() {
       gameState.playerMines = [6, 6];
       gameState.phase = 'setup';
+      setupScreen = 'main'; // Reset to main menu
+      renderGame();
+    }
+    
+    // Functions for navigation between setup screens
+    function showRules() {
+      setupScreen = 'rules';
+      renderGame();
+    }
+    
+    function showSettings() {
+      setupScreen = 'settings';
+      renderGame();
+    }
+    
+    function showStartGame() {
+      setupScreen = 'startGame';
+      renderGame();
+    }
+    
+    function backToMainMenu() {
+      setupScreen = 'main';
       renderGame();
     }
     
@@ -632,19 +670,49 @@
     // Audio functions
     // --------------------
     let musicPlaying = false;
+    let audioContext = null;
+    let audioSource = null;
+    let audioGainNode = null;
     
     function toggleMusic() {
       const backgroundMusic = document.getElementById('backgroundMusic');
       const musicButton = document.getElementById('musicToggle');
       
       if (musicPlaying) {
+        if (audioSource) {
+          audioSource.disconnect();
+          audioSource = null;
+        }
         backgroundMusic.pause();
         musicButton.innerHTML = '🔇';
       } else {
+        // Create audio context for better control
+        if (!audioContext) {
+          try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Create a gain node for volume control
+            audioGainNode = audioContext.createGain();
+            audioGainNode.gain.value = 0.3; // Set volume
+            audioGainNode.connect(audioContext.destination);
+          } catch(e) {
+            console.error("Error creating audio context:", e);
+          }
+        }
+        
         backgroundMusic.volume = 0.3;
         backgroundMusic.play()
           .then(() => {
             console.log("Music started playing");
+            
+            // Connect the audio element to the audio context if available
+            if (audioContext && !audioSource) {
+              try {
+                audioSource = audioContext.createMediaElementSource(backgroundMusic);
+                audioSource.connect(audioGainNode);
+              } catch(e) {
+                console.error("Error connecting audio:", e);
+              }
+            }
           })
           .catch(error => {
             console.error("Error playing music:", error);
@@ -663,17 +731,10 @@
       const max = parseInt(document.getElementById('maxCards').value);
       gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
       
-      // Try to start music
-      const backgroundMusic = document.getElementById('backgroundMusic');
-      backgroundMusic.volume = 0.3;
-      backgroundMusic.play()
-        .then(() => {
-          musicPlaying = true;
-          document.getElementById('musicToggle').innerHTML = '🔊';
-        })
-        .catch(error => {
-          console.log("Autoplay prevented:", error);
-        });
+      // Try to start music using the toggleMusic function if music isn't already playing
+      if (!musicPlaying) {
+        toggleMusic(); // This will use our enhanced audio processing
+      }
       
       startGame();
     }
@@ -992,35 +1053,93 @@
     // --------------------
     // Rendering functions
     // --------------------
+    // Track which setup screen to show
+    let setupScreen = 'main'; // 'main', 'rules', 'settings'
+    
     function renderGame() {
       const gameElement = document.getElementById('game');
       let content = '';
       
       if (gameState.phase === 'setup') {
-        content = `
-          <div class="game-setup">
-            <h1 class="title">Card Bluff Roulette</h1>
-            <div class="section">
-              <h2 class="subtitle">How to Play:</h2>
-              <ul class="rules" style="line-height:1.6; margin-bottom:20px;">
-                <li>Each player gets 10 cards and there's one center card.</li>
-                <li>The active player selects cards from their hand and clicks "Ready".</li>
-                <li>The opponent then guesses if the selected cards match the center card's suit.</li>
-                <li>If the active player bluffs (claims match when they don't) and is caught, they get random cards equal to the number they played.</li>
-                <li>If the guess is wrong, the guessing player faces the Mine Challenge.</li>
-                <li>Each player starts with their own set of 6 diamonds for the Mine Challenge.</li>
-                <li>If you click a safe diamond, it is removed from your set and the round immediately ends as safe.</li>
-                <li>If you click the lose diamond, you lose the game and return to the start screen.</li>
-                <li>You also win if you empty your hand of cards.</li>
-              </ul>
-              <div class="input-container">
-                <input id="player1Name" type="text" placeholder="Player 1 Name" value="Player 1">
-                <input id="player2Name" type="text" placeholder="Player 2 Name" value="Player 2">
-                <input id="maxCards" type="number" placeholder="Max Cards to Select (max 10)" value="10" min="1" max="10">
-                <button class="button" onclick="saveNamesAndStartGame()">Start Game</button>
+        // Main setup screen with three buttons
+        if (setupScreen === 'main') {
+          content = `
+            <div class="game-setup">
+              <h1 class="title">Card Bluff Roulette</h1>
+              <div class="section text-center">
+                <div class="button-container main-menu">
+                  <button class="button main-button" onclick="showStartGame()">Start Game</button>
+                  <button class="button main-button" onclick="showSettings()">Settings</button>
+                  <button class="button main-button" onclick="showRules()">Rules</button>
+                </div>
               </div>
             </div>
-          </div>
+          `;
+        }
+        // Rules screen
+        else if (setupScreen === 'rules') {
+          content = `
+            <div class="game-setup">
+              <h1 class="title">Card Bluff Roulette</h1>
+              <div class="section">
+                <h2 class="subtitle">How to Play:</h2>
+                <ul class="rules" style="line-height:1.6; margin-bottom:20px;">
+                  <li>Each player gets 10 cards and there's one center card.</li>
+                  <li>The active player selects cards from their hand and clicks "Ready".</li>
+                  <li>The opponent then guesses if the selected cards match the center card's suit.</li>
+                  <li>If the active player bluffs (claims match when they don't) and is caught, they get random cards equal to the number they played.</li>
+                  <li>If the guess is wrong, the guessing player faces the Mine Challenge.</li>
+                  <li>Each player starts with their own set of 6 diamonds for the Mine Challenge.</li>
+                  <li>If you click a safe diamond, it is removed from your set and the round immediately ends as safe.</li>
+                  <li>If you click the lose diamond, you lose the game and return to the start screen.</li>
+                  <li>You also win if you empty your hand of cards.</li>
+                </ul>
+                <div class="button-container">
+                  <button class="button" onclick="backToMainMenu()">Back</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        // Settings screen
+        else if (setupScreen === 'settings') {
+          content = `
+            <div class="game-setup">
+              <h1 class="title">Card Bluff Roulette</h1>
+              <div class="section">
+                <h2 class="subtitle">Settings</h2>
+                <div class="input-container">
+                  <input id="player1Name" type="text" placeholder="Player 1 Name" value="Player 1">
+                  <input id="player2Name" type="text" placeholder="Player 2 Name" value="Player 2">
+                  <input id="maxCards" type="number" placeholder="Max Cards to Select (max 10)" value="10" min="1" max="10">
+                </div>
+                <div class="button-container">
+                  <button class="button" onclick="backToMainMenu()">Back</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        // Start game screen
+        else if (setupScreen === 'startGame') {
+          content = `
+            <div class="game-setup">
+              <h1 class="title">Card Bluff Roulette</h1>
+              <div class="section">
+                <h2 class="subtitle">Ready to Play?</h2>
+                <div class="input-container">
+                  <input id="player1Name" type="text" placeholder="Player 1 Name" value="Player 1">
+                  <input id="player2Name" type="text" placeholder="Player 2 Name" value="Player 2">
+                  <input id="maxCards" type="number" placeholder="Max Cards to Select (max 10)" value="10" min="1" max="10">
+                </div>
+                <div class="button-container">
+                  <button class="button" onclick="saveNamesAndStartGame()">Start Game</button>
+                  <button class="button" onclick="backToMainMenu()">Back</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
         `;
       } else {
         content = `<div class="game-board">
