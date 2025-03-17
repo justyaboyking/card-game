@@ -38,6 +38,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Function to serve local audio file
+def get_audio_file_path():
+    # Look for these music files in the current directory
+    possible_filenames = ["background_music.mp3", "music.mp3", "game_music.mp3"]
+    
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    for filename in possible_filenames:
+        path = os.path.join(current_dir, filename)
+        if os.path.exists(path):
+            return path
+    
+    # If no music file is found, return None
+    return None
+
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
@@ -50,14 +65,32 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Use a reliable embedded audio player approach
-    # Replace the problematic audio element with a more reliable solution
-    new_audio_element = '''
-    <audio id="backgroundMusic" loop>
-      <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
-    '''
+    # Check if we have a local audio file
+    audio_path = get_audio_file_path()
+    
+    if audio_path:
+        # If we have a local audio file, create a base64 data URL
+        with open(audio_path, "rb") as audio_file:
+            audio_bytes = audio_file.read()
+            audio_b64 = base64.b64encode(audio_bytes).decode()
+            audio_data_url = f"data:audio/mpeg;base64,{audio_b64}"
+        
+        # Create new audio element with the base64 data URL
+        new_audio_element = f'''
+        <audio id="backgroundMusic" loop>
+          <source src="{audio_data_url}" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+        '''
+    else:
+        # Fallback to a free music source if no local file is found
+        new_audio_element = '''
+        <audio id="backgroundMusic" loop>
+          <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+        '''
+        st.warning("No music file found. Using default music. Add 'background_music.mp3' to your project folder to use your own music.")
     
     # Replace the original audio element
     html_content = html_content.replace(
@@ -65,7 +98,7 @@ try:
         new_audio_element
     )
     
-    # Add a debug message to help track music playback
+    # Add improved audio playback script
     debug_script = '''
     <script>
       // Add this right before the closing </body> tag
