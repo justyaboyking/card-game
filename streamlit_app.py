@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
-import base64
+import re
 
 # Set full page width and remove padding
 st.set_page_config(
@@ -26,7 +26,7 @@ st.markdown("""
     }
     iframe {
         width: 100%;
-        height: 90vh;
+        height: 88vh;
         border: none;
     }
     .title {
@@ -35,16 +35,14 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    /* Style audio controls */
-    .audio-container {
-        background-color: rgba(0, 180, 216, 0.1);
-        padding: 10px;
-        border-radius: 10px;
+    /* Hide audio controls when not active */
+    .audio-player {
         margin-bottom: 10px;
-        border: 1px solid rgba(0, 180, 216, 0.3);
+    }
+    /* Make audio player look nicer */
+    audio {
+        border-radius: 30px;
+        background-color: rgba(0, 180, 216, 0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -52,31 +50,18 @@ st.markdown("""
 # Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
-# Create audio section using Streamlit's native audio support
-with st.expander("🎵 Background Music (Click to expand)", expanded=False):
-    st.write("Play background music while you enjoy the game!")
+# Game audio player using Streamlit's native st.audio
+with st.container():
+    cols = st.columns([3, 1])
     
-    # Multiple music options
-    st.write("Choose your background track:")
-    music_option = st.radio(
-        "Select music style:",
-        ["Suspense Game Music", "Upbeat Game Music", "Intense Battle", "Relaxing Lounge"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
+    with cols[0]:
+        # Audio player - using Streamlit's NATIVE audio function
+        st.audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3", 
+                format="audio/mp3")
     
-    # Map music options to URLs
-    music_urls = {
-        "Suspense Game Music": "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3",
-        "Upbeat Game Music": "https://assets.mixkit.co/music/preview/mixkit-fun-and-quirky-29.mp3",
-        "Intense Battle": "https://assets.mixkit.co/music/preview/mixkit-games-worldbeat-466.mp3",
-        "Relaxing Lounge": "https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3"
-    }
-    
-    # Display the selected music with Streamlit's native audio player
-    st.audio(music_urls[music_option], format="audio/mp3", start_time=0)
-    
-    st.caption("Music provided by Mixkit - royalty free music and sound effects")
+    with cols[1]:
+        # Simple instructions
+        st.caption("👆 Click play to add background music to your game!")
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -87,9 +72,7 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Modify the HTML to remove the audio element and music button
-    # Use regex to completely remove the old audio element
-    import re
+    # Remove audio element completely
     audio_pattern = re.compile(r'<audio[^>]*id=["\']backgroundMusic["\'][^>]*>.*?</audio>', re.DOTALL)
     html_content = audio_pattern.sub('', html_content)
     
@@ -122,7 +105,7 @@ try:
     html_content = html_content.replace('</body>', f'{music_toggle_fix}</body>')
     
     # Display the HTML content
-    components.html(html_content, height=720, scrolling=True)
+    components.html(html_content, height=750, scrolling=True)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
