@@ -50,12 +50,6 @@ st.markdown("""
         height: 88vh;
         border: none;
     }
-    .title {
-        color: #00b4d8;
-        text-align: center;
-        margin-bottom: 5px;
-        font-size: 24px;
-    }
     /* Hide audio controls when not active */
     .audio-player {
         margin-bottom: 10px;
@@ -71,9 +65,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Add a simple title
-st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
-
 # Set the current directory path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -87,7 +78,6 @@ def get_base64_audio(file_path):
                 st.warning(f"The audio file at {file_path} appears to be invalid or too small ({len(data)} bytes). Please replace it with a valid MP3 file.")
                 return None
             encoded_data = base64.b64encode(data).decode()
-            st.write(f"Successfully encoded {file_path} ({len(data)} bytes)")
             return encoded_data
     except Exception as e:
         st.error(f"Error loading audio file: {str(e)}")
@@ -103,7 +93,6 @@ if os.path.exists(shadows_shuffle_path) and os.path.getsize(shadows_shuffle_path
     if audio_base64:
         audio_url = f"data:audio/mp3;base64,{audio_base64}"
         autoplay_audio(audio_url)
-        st.success("Playing music from 'Shadows Shuffle.mp3'")
     else:
         # Fall back to background_music.mp3
         if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 1000:
@@ -111,7 +100,6 @@ if os.path.exists(shadows_shuffle_path) and os.path.getsize(shadows_shuffle_path
             if audio_base64:
                 audio_url = f"data:audio/mp3;base64,{audio_base64}"
                 autoplay_audio(audio_url)
-                st.success("Playing music from 'background_music.mp3'")
             else:
                 # No fallback to remote URL, just show error
                 st.error("Could not load local MP3 files. Please ensure valid MP3 files are available.")
@@ -125,7 +113,6 @@ else:
         if audio_base64:
             audio_url = f"data:audio/mp3;base64,{audio_base64}"
             autoplay_audio(audio_url)
-            st.success("Playing music from 'background_music.mp3'")
         else:
             # No fallback to remote URL, just show error
             st.error("Could not load local MP3 file. Please ensure a valid MP3 file is available.")
