@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
+import base64
 
 # Set full page width and remove padding
 st.set_page_config(
@@ -9,6 +10,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Function to get base64 encoded audio for direct embedding
+def get_audio_base64(file_path):
+    with open(file_path, "rb") as f:
+        data = f.read()
+        return base64.b64encode(data).decode()
 
 # Apply custom CSS to maximize space
 st.markdown("""
@@ -60,20 +67,18 @@ st.markdown("""
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
 
-# Add a simple audio toggle in Streamlit
+# Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
-st.markdown('<div class="button-container"><button id="music-toggle" class="music-button" onclick="toggleMusic()">🔊 Music On/Off</button></div>', unsafe_allow_html=True)
 
 # Read the HTML file with error handling
 try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Remove the original music button
-    html_content = html_content.replace('<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>', 
-                                        '<!-- Music handled by Streamlit -->')
+    # Direct audio embed URL - using your provided URL
+    audio_url = "https://s31.aconvert.com/convert/p3r68-cdx67/xwo2w-3rju8.mp3"
     
-    # Modify the HTML to include a direct audio element that can be controlled
+    # Modify the HTML to include direct audio playback
     modified_html = f"""
     <!DOCTYPE html>
     <html>
@@ -95,61 +100,91 @@ try:
                 max-width: 800px;
                 width: 100%;
             }}
+            .audio-controls {{
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            .audio-button {{
+                background: linear-gradient(135deg, #00b4d8, #0096c7);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }}
         </style>
     </head>
     <body>
-        <!-- Embedded audio that's hidden but accessible via JavaScript -->
-        <audio id="gameAudio" loop style="display:none;">
-            <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
+        <!-- Embedded audio element that will play automatically but muted initially -->
+        <audio id="backgroundMusic" loop>
+            <source src="{audio_url}" type="audio/mpeg">
+            Your browser does not support the audio element.
         </audio>
+        
+        <div class="audio-controls">
+            <button id="audioToggle" class="audio-button" onclick="toggleAudio()">🔊</button>
+        </div>
         
         <div id="game-container">
             {html_content}
         </div>
         
         <script>
-            // Function to toggle music from outside the iframe
-            function toggleMusic() {{
-                const audio = document.getElementById('gameAudio');
-                if (audio.paused) {{
-                    audio.volume = 0.3;
-                    audio.play();
+            // Variables for audio state
+            let isPlaying = false;
+            const audioElement = document.getElementById('backgroundMusic');
+            const audioButton = document.getElementById('audioToggle');
+            
+            // Function to toggle audio
+            function toggleAudio() {{
+                if (isPlaying) {{
+                    audioElement.pause();
+                    audioButton.innerText = '🔇';
                 }} else {{
-                    audio.pause();
+                    // Set volume before playing
+                    audioElement.volume = 0.3;
+                    
+                    // Play with user interaction (this is important for browser policies)
+                    const playPromise = audioElement.play();
+                    
+                    if (playPromise !== undefined) {{
+                        playPromise.then(_ => {{
+                            console.log("Audio playback started successfully");
+                            audioButton.innerText = '🔊';
+                        }}).catch(error => {{
+                            console.error("Audio playback failed:", error);
+                        }});
+                    }}
                 }}
+                
+                isPlaying = !isPlaying;
             }}
             
-            // Connect the Streamlit button to the audio toggle
-            window.addEventListener('message', function(e) {{
-                if (e.data.type === 'toggleMusic') {{
-                    toggleMusic();
+            // Auto-start audio with a slight delay (needs user interaction first in most browsers)
+            document.body.addEventListener('click', function() {{
+                if (!isPlaying) {{
+                    setTimeout(() => {{
+                        toggleAudio();
+                    }}, 1000);
                 }}
-            }});
-            
-            // Make the toggle function available to parent
-            window.toggleMusic = toggleMusic;
+            }}, {{ once: true }});
         </script>
     </body>
     </html>
     """
     
-    # Add JavaScript to connect the Streamlit button to the iframe
-    st.markdown("""
-    <script>
-        // Function to toggle music in the iframe when the button is clicked
-        function toggleMusic() {
-            const iframe = document.querySelector('iframe');
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.toggleMusic();
-            }
-        }
-        
-        // Connect the button to the toggle function
-        document.getElementById('music-toggle').addEventListener('click', toggleMusic);
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # Display the HTML content
+    # Display the HTML content with embedded audio
     components.html(modified_html, height=800, scrolling=True)
     
 except FileNotFoundError:
