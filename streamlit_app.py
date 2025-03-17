@@ -50,35 +50,121 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # No audio fix script - this completely removes audio functionality
-    # but preserves all game functionality
-    remove_audio_script = '''
+    # Create a complete inline JavaScript audio player
+    # This approach embeds actual base64 audio directly into the page to avoid CORS issues
+    audio_fix_script = '''
     <script>
-      // Fix for music toggle button
-      window.toggleMusic = function() {
-        const musicButton = document.getElementById('musicToggle');
-        if (musicButton) {
-          musicButton.innerHTML = '🎮';  // Change to a game icon instead
+      // Create audio using Web Audio API - maximum browser compatibility
+      let audioContext;
+      let audioBuffer;
+      let audioSource;
+      window.musicPlaying = false;
+      
+      // This uses a short, completely free sound loop
+      const BASE64_SOUND = "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADwADMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAYEAAAAAAAAA8AnCLLjAAAAAAAAAAAAAAAAAAAA//tSwAAB8AAAaQAAAAgAAA0gAAABAMzl8+gEFsJGjCAIchERjQZDIEYxUGDJ4GCAX4EL5P4EOdAEPvJPjnw5/+CYP6gQOV+UDgQHfiQ+T8nP+pzghcoD//IDhwQGP///Lv//////oEQJjof/+pyCQDH//8MXKf//+SDgx///wQcnH//6BAgc///KBw4IBj//9TkEgGP//4YuU///yQcGP//+CDk4//9AgQOf//+UDhwQDH//6nIJAMf//wxcp///kg4Mf//8EHJx//6BAgc///KBw4IBj//9TkEgGP//4YuU///yQcGP//+CDk4//9AgQOf//+VDlz4Y///U5JAMf//wxfKf//yQeGP//+CDk4//9AgQOf//+UDhw4DH//6nJJAMf//wxcp///JB4Y///4IOT///QIED///5QOHDAL//6vkDnADCA38MAAQQON///JB4Y///4IHh///0CA4///8MWP/+QDH//6n//////wQIED//8n/////+UDlw4C//+r//////yQIEBj//9P//////4IPDgP//1P/////4ImU4c///1f/////kg8OA///U///////gg8OA///V//////+SDw4D//9T//////+CBwYD//9X//////5IODAf//qf//////ggcGA///V//////+SDgwH//6n//////4IHBgP//1P//////5IPDAP//qf//////ggcGA///U///////kgcGA///qf//////wQODAf//U///////kgcGA///1P/////+CBwYD//9T//////+SDwwH//6n//////8EDgwH//1P//////5IPDAP//qf/////+p7OPpwwAFsJGjCAIchERjQZDIEYxUGDJ4GCAX4EL5P4EOdAEPvJPjnw5/+CYP6gQOV+UDgQHfiQ+T8nP+pzghcoD//IDhwQGP///Lv//////oEQJjof/+pyCQDH//8MXKf//+SDgx///wQcnH//6BAgc///KBw4IBj//9TkEgGP//4YuU///yQcGP//+CDk4//9AgQOf//+UDhwQDH//6nIJAMf//wxcp///kg4Mf//8EHJx//6BAgc///KBw4IBj//9TkEgGP//4YuU///yQcGP//+CDk4//9AgQOf//+VDlz4Y///U5JAMf//wxfKf//yQeGP//+CDk4//9AgQOf//+UDhw4DH//6nJJAMf//wxcp///JB4Y///4IOT///QIED///5QOHDAL//6vkDnADCA38MAAQQON///JB4Y///4IHh///0CA4///8MWP/+QDH//6n//////wQIED//8n/////+UDlw4C//+r//////yQIEBj//9P//////4IPDgP//1P/////4ImU4c///1f/////kg8OA///U///////gg8OA///V//////+SDw4D//9T//////+CBwYD//9X//////5IODAf//qf//////ggcGA///V//////+SDgwH//6n//////4IHBgP//1P//////5IPDAP//qf//////ggcGA///U///////kgcGA///qf//////wQODAf//U///////kgcGA///1P/////+CBwYD//9T//////+SDwwH//6n//////8EDgwH//1P//////5IPDAP//qf/////+p7OPpw==";
+
+      // Initialize audio system with our embedded sound
+      function initAudio() {
+        try {
+          // Create audio context
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          
+          // Convert base64 to array buffer
+          const base64 = BASE64_SOUND;
+          const binaryString = window.atob(base64);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          
+          // Decode the audio data
+          audioContext.decodeAudioData(bytes.buffer, function(buffer) {
+            audioBuffer = buffer;
+            console.log("Audio initialized successfully!");
+          }, function(err) {
+            console.error("Error decoding audio", err);
+          });
+        } catch (e) {
+          console.error("Audio initialization failed:", e);
+        }
+      }
+      
+      // Play the sound with looping
+      function playSound() {
+        if (!audioContext || !audioBuffer) {
+          console.error("Audio not initialized");
+          return false;
         }
         
-        // Show a small notification
-        const notification = document.createElement('div');
-        notification.style.cssText = 'position:fixed; top:70px; right:20px; background-color:rgba(255,255,255,0.8); color:#333; padding:8px 15px; border-radius:4px; font-size:14px; z-index:1000; transition:opacity 0.5s;';
-        notification.innerHTML = "Playing without music";
-        document.body.appendChild(notification);
+        try {
+          // Create new source
+          audioSource = audioContext.createBufferSource();
+          audioSource.buffer = audioBuffer;
+          audioSource.loop = true;
+          audioSource.connect(audioContext.destination);
+          audioSource.start(0);
+          return true;
+        } catch (e) {
+          console.error("Error playing sound:", e);
+          return false;
+        }
+      }
+      
+      // Stop the currently playing sound
+      function stopSound() {
+        if (audioSource) {
+          try {
+            audioSource.stop();
+          } catch (e) {
+            console.error("Error stopping sound:", e);
+          }
+        }
+      }
+      
+      // Initialize audio on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize our audio system
+        initAudio();
         
-        // Fade out and remove notification
-        setTimeout(() => {
-          notification.style.opacity = '0';
-          setTimeout(() => {
-            document.body.removeChild(notification);
-          }, 500);
-        }, 2000);
+        // Wait for user interaction to enable audio
+        document.addEventListener('click', function enableAudio() {
+          if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+          document.removeEventListener('click', enableAudio);
+        }, { once: true });
+      });
+      
+      // Override the toggleMusic function
+      window.toggleMusic = function() {
+        const musicButton = document.getElementById('musicToggle');
         
-        return false;
+        if (window.musicPlaying) {
+          // Stop music
+          stopSound();
+          musicButton.innerHTML = '🔇';
+          window.musicPlaying = false;
+        } else {
+          // Start music
+          if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+          
+          if (playSound()) {
+            musicButton.innerHTML = '🔊';
+            window.musicPlaying = true;
+          } else {
+            // Show error
+            musicButton.innerHTML = '❌';
+            setTimeout(() => {
+              musicButton.innerHTML = '🔊';
+            }, 2000);
+          }
+        }
       };
       
-      // Override saveNamesAndStartGame to avoid audio errors
+      // Override saveNamesAndStartGame
       const originalSaveNamesAndStartGame = window.saveNamesAndStartGame;
       window.saveNamesAndStartGame = function() {
         const name1 = document.getElementById('player1Name').value || "Player 1";
@@ -87,33 +173,38 @@ try:
         const max = parseInt(document.getElementById('maxCards').value);
         gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
         
-        // Skip audio part
+        // Initialize audio if not already done
+        if (!audioContext) {
+          initAudio();
+        }
+        
+        // Try to play music (will work if user has interacted)
+        if (audioContext && audioContext.state === 'running') {
+          playSound();
+          window.musicPlaying = true;
+          const musicButton = document.getElementById('musicToggle');
+          if (musicButton) {
+            musicButton.innerHTML = '🔊';
+          }
+        }
+        
         startGame();
       };
-      
-      // Set music button on load
-      document.addEventListener('DOMContentLoaded', function() {
-        const musicButton = document.getElementById('musicToggle');
-        if (musicButton) {
-          musicButton.innerHTML = '🎮';
-        }
-      });
     </script>
     '''
     
-    # Use regex to completely remove the audio element 
+    # Use regex to completely remove the old audio element
     audio_pattern = re.compile(r'<audio[^>]*id=["\']backgroundMusic["\'][^>]*>.*?</audio>', re.DOTALL)
     html_content = audio_pattern.sub('', html_content)
     
-    # Insert the remove audio script before the closing body tag
-    html_content = html_content.replace('</body>', f'{remove_audio_script}</body>')
+    # Insert our audio script before the closing body tag
+    html_content = html_content.replace('</body>', f'{audio_fix_script}</body>')
     
     # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
     
     # Add instructions for users
-    st.warning("⚠️ Game music has been disabled to ensure the game works correctly. Enjoy playing!")
-    st.info("If you'd like to add your own background music, consider playing it from your device while enjoying the game.")
+    st.info("🎵 **Music Instructions:** Click the 🔊 button in the top-right corner to toggle game music. You may need to click it twice or interact with the game first.")
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
