@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import os
 import re
+import base64
 
 # Set full page width and remove padding
 st.set_page_config(
@@ -10,6 +11,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Function to autoplay audio in the background
+def autoplay_audio(file_url):
+    audio_html = f"""
+        <audio autoplay loop style="display:none;">
+            <source src="{file_url}" type="audio/mpeg">
+        </audio>
+    """
+    st.markdown(audio_html, unsafe_allow_html=True)
 
 # Apply custom CSS to maximize space
 st.markdown("""
@@ -44,24 +54,17 @@ st.markdown("""
         border-radius: 30px;
         background-color: rgba(0, 180, 216, 0.1);
     }
+    /* Hide Streamlit elements we don't need */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 # Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
-# Game audio player using Streamlit's native st.audio
-with st.container():
-    cols = st.columns([3, 1])
-    
-    with cols[0]:
-        # Audio player - using Streamlit's NATIVE audio function
-        st.audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3", 
-                format="audio/mp3")
-    
-    with cols[1]:
-        # Simple instructions
-        st.caption("👆 Click play to add background music to your game!")
+# Autoplay background music (hidden)
+autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
