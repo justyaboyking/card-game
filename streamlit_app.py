@@ -13,9 +13,9 @@ st.set_page_config(
 )
 
 # Function to autoplay audio in the background
-def autoplay_audio(file_url):
+def autoplay_audio(file_url, audio_id="streamlit_audio"):
     audio_html = f"""
-        <audio autoplay loop style="display:none;">
+        <audio id="{audio_id}" autoplay loop style="display:none;">
             <source src="{file_url}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
@@ -28,6 +28,9 @@ def autoplay_audio(file_url):
                     audio.play().catch(e => console.log('Audio play failed:', e));
                 }}
             }});
+            
+            // Make audio element accessible globally for mute button
+            window.streamlitAudio = document.getElementById('{audio_id}');
         </script>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
@@ -162,6 +165,39 @@ try:
     
     # Insert the fix before the closing body tag
     html_content = html_content.replace('</body>', f'{music_toggle_fix}</body>')
+    
+    # Add mute button
+    col1, col2 = st.columns([10, 1])
+    with col2:
+        if st.button("🔊 Mute", key="mute_button"):
+            # This doesn't directly control audio - we use JavaScript for that
+            st.session_state.muted = not st.session_state.get('muted', False)
+            st.experimental_rerun()
+    
+    # JavaScript to control audio muting
+    mute_state = st.session_state.get('muted', False)
+    mute_icon = "🔇" if mute_state else "🔊"
+    mute_text = "Unmute" if mute_state else "Mute"
+    
+    # Update button text without rerunning
+    st.markdown(f"""
+    <script>
+        // Update button text based on state
+        document.addEventListener('DOMContentLoaded', function() {{
+            const buttons = document.querySelectorAll('button');
+            for (let button of buttons) {{
+                if (button.innerText.includes('Mute') || button.innerText.includes('Unmute')) {{
+                    button.innerText = '{mute_icon} {mute_text}';
+                }}
+            }}
+            
+            // Set audio muted state
+            if (window.streamlitAudio) {{
+                window.streamlitAudio.muted = {str(mute_state).lower()};
+            }}
+        }});
+    </script>
+    """, unsafe_allow_html=True)
     
     # Display the HTML content
     components.html(html_content, height=750, scrolling=True)
