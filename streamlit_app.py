@@ -64,7 +64,29 @@ st.markdown("""
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
 # Autoplay background music (hidden)
-autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+# Convert local audio file to base64 for embedding
+def get_base64_audio(file_path):
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+            return base64.b64encode(data).decode()
+    except Exception as e:
+        st.error(f"Error loading audio file: {str(e)}")
+        return None
+
+# Try to use local file first, fall back to remote URL if not available
+music_file_path = os.path.join(current_dir, "background_music.mp3")
+if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 0:
+    audio_base64 = get_base64_audio(music_file_path)
+    if audio_base64:
+        audio_url = f"data:audio/mp3;base64,{audio_base64}"
+        autoplay_audio(audio_url)
+    else:
+        # Fallback to remote URL
+        autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+else:
+    # Fallback to remote URL
+    autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
