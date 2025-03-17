@@ -1,7 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
-import base64
 import re
 
 # Set full page width and remove padding
@@ -36,51 +35,14 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
-    .file-info {
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# Debug information display
+# Add a simple title
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
-# Get the current directory and list all files
+# Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
-files_in_dir = os.listdir(current_dir)
-
-# Display files for debugging
-with st.expander("⚙️ Debug Info (Click to expand)"):
-    st.write("Files in directory:")
-    for file in files_in_dir:
-        st.write(f"- {file}")
-
-# Function to find music files
-def get_audio_file_path():
-    # Look for music files with case-insensitive matching
-    possible_filenames = ["background_music.mp3", "music.mp3", "game_music.mp3", 
-                         "BACKGROUND_MUSIC.MP3", "Background_Music.mp3"]
-    
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # First check exact matches
-    for filename in possible_filenames:
-        path = os.path.join(current_dir, filename)
-        if os.path.exists(path):
-            return path
-    
-    # Then try case-insensitive search through all files
-    for file in os.listdir(current_dir):
-        if file.lower().endswith('.mp3'):
-            return os.path.join(current_dir, file)
-    
-    # If no music file is found, return None
-    return None
-
-# Path to HTML file
 html_file_path = os.path.join(current_dir, "game tst.html")
 
 # Read the HTML file with error handling
@@ -88,56 +50,21 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Check if we have a local audio file
-    audio_path = get_audio_file_path()
+    # Direct link to background music
+    # This uses a free game music track from Mixkit - replace with your own if desired
+    music_url = "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3"
     
-    if audio_path:
-        st.success(f"Found music file: {os.path.basename(audio_path)}")
-        
-        # Get file size for debugging
-        file_size = os.path.getsize(audio_path) / (1024 * 1024)  # Size in MB
-        
-        # If we have a local audio file, create a base64 data URL
-        try:
-            with open(audio_path, "rb") as audio_file:
-                audio_bytes = audio_file.read()
-                audio_b64 = base64.b64encode(audio_bytes).decode()
-                audio_data_url = f"data:audio/mpeg;base64,{audio_b64}"
-            
-            # Create new audio element with the base64 data URL
-            new_audio_element = f'''
-            <audio id="backgroundMusic" loop>
-              <source src="{audio_data_url}" type="audio/mpeg">
-              Your browser does not support the audio element.
-            </audio>
-            '''
-            st.info(f"Music file encoded successfully. File size: {file_size:.2f} MB")
-        except Exception as e:
-            st.error(f"Error encoding music file: {e}")
-            # Fallback to default music
-            new_audio_element = '''
-            <audio id="backgroundMusic" loop>
-              <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
-              Your browser does not support the audio element.
-            </audio>
-            '''
-    else:
-        st.warning("No music file found. Using default music. Add 'background_music.mp3' to your project folder to use your own music.")
-        # Fallback to a free music source if no local file is found
-        new_audio_element = '''
-        <audio id="backgroundMusic" loop>
-          <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
-          Your browser does not support the audio element.
-        </audio>
-        '''
+    # Create new audio element with direct URL
+    new_audio_element = f'''
+    <audio id="backgroundMusic" loop>
+      <source src="{music_url}" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    '''
     
-    # More robust replacement using regex to handle whitespace variations
+    # More robust replacement using regex
     audio_pattern = re.compile(r'<audio[^>]*id=["\']backgroundMusic["\'][^>]*>.*?</audio>', re.DOTALL)
-    if audio_pattern.search(html_content):
-        html_content = audio_pattern.sub(new_audio_element, html_content)
-        st.success("Audio element replaced successfully")
-    else:
-        st.error("Could not find audio element in HTML file")
+    html_content = audio_pattern.sub(new_audio_element, html_content)
     
     # Add improved audio playback script
     debug_script = '''
@@ -152,7 +79,6 @@ try:
         
         if (!backgroundMusic) {
           console.error("Background music element not found!");
-          alert("Music player not found. Try refreshing the page.");
           return;
         }
         
@@ -181,7 +107,6 @@ try:
             }
           } catch (e) {
             console.error("Exception playing music:", e);
-            alert("Error playing music. Please try again.");
           }
         }
         
@@ -191,11 +116,7 @@ try:
     '''
     
     # Insert the debug script before closing body tag
-    if '</body>' in html_content:
-        html_content = html_content.replace('</body>', f'{debug_script}</body>')
-        st.success("Debug script inserted successfully")
-    else:
-        st.error("Could not find </body> tag in HTML file")
+    html_content = html_content.replace('</body>', f'{debug_script}</body>')
     
     # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
