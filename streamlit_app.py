@@ -267,9 +267,33 @@ try:
     # Insert the fix before the closing body tag
     html_content = html_content.replace('</body>', f'{music_toggle_fix}</body>')
     
-    # Add mute button
-    col1, col2 = st.columns([10, 1])
+    # Add main menu options and mute button
+    st.session_state.active_tab = st.session_state.get('active_tab', 'game')
+
+    # Create tabs for main menu options
+    col1, col2, col3, col4, col5 = st.columns([3, 3, 3, 3, 1])
+
+    with col1:
+        if st.button("🎮 Play Game", key="play_game", use_container_width=True):
+            st.session_state.active_tab = 'game'
+            st.rerun()
+
     with col2:
+        if st.button("⚙️ Settings", key="settings", use_container_width=True):
+            st.session_state.active_tab = 'settings'
+            st.rerun()
+
+    with col3:
+        if st.button("📋 Rules", key="rules", use_container_width=True):
+            st.session_state.active_tab = 'rules'
+            st.rerun()
+            
+    with col4:
+        if st.button("ℹ️ About", key="about", use_container_width=True):
+            st.session_state.active_tab = 'about'
+            st.rerun()
+
+    with col5:
         if st.button("🔊 Mute", key="mute_button"):
             # This doesn't directly control audio - we use JavaScript for that
             st.session_state.muted = not st.session_state.get('muted', False)
