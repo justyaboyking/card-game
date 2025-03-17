@@ -100,13 +100,11 @@ if os.path.exists(shadows_shuffle_path) and os.path.getsize(shadows_shuffle_path
                 autoplay_audio(audio_url)
                 st.success("Playing music from 'background_music.mp3'")
             else:
-                # Fallback to remote URL
-                st.warning("Could not load local MP3 files. Using fallback music instead.")
-                autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+                # No fallback to remote URL, just show error
+                st.error("Could not load local MP3 files. Please ensure valid MP3 files are available.")
         else:
-            # Fallback to remote URL with explanation
-            st.warning("Local MP3 files not found or invalid. Using fallback music instead.")
-            autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+            # No fallback to remote URL, just show error
+            st.error("Local MP3 files not found or invalid. Please add valid MP3 files to the application directory.")
 else:
     # Try background_music.mp3 as fallback
     if os.path.exists(music_file_path) and os.path.getsize(music_file_path) > 1000:
@@ -116,16 +114,14 @@ else:
             autoplay_audio(audio_url)
             st.success("Playing music from 'background_music.mp3'")
         else:
-            # Fallback to remote URL
-            st.warning("Could not load local MP3 file. Using fallback music instead.")
-            autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+            # No fallback to remote URL, just show error
+            st.error("Could not load local MP3 file. Please ensure a valid MP3 file is available.")
     else:
-        # Fallback to remote URL with explanation
+        # No fallback to remote URL, just show error
         if not os.path.exists(music_file_path):
-            st.warning("Local MP3 files not found. Using fallback music instead.")
+            st.error("Local MP3 files not found. Please add MP3 files to the application directory.")
         elif os.path.getsize(music_file_path) <= 1000:
-            st.warning(f"The MP3 file is too small ({os.path.getsize(music_file_path)} bytes) and appears to be invalid. Using fallback music instead.")
-        autoplay_audio("https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3")
+            st.error(f"The MP3 file is too small ({os.path.getsize(music_file_path)} bytes) and appears to be invalid. Please replace it with a valid MP3 file.")
 
 # Set the HTML file path (current_dir is already defined above)
 html_file_path = os.path.join(current_dir, "game tst.html")
