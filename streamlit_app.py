@@ -324,8 +324,99 @@ try:
     </script>
     """, unsafe_allow_html=True)
     
-    # Display the HTML content
-    components.html(html_content, height=750, scrolling=True)
+    # Display content based on active tab
+    if st.session_state.active_tab == 'game':
+        # Display the game HTML content
+        components.html(html_content, height=750, scrolling=True)
+    
+    elif st.session_state.active_tab == 'settings':
+        st.markdown("""<h2 style='color:#00b4d8;'>Game Settings</h2>""", unsafe_allow_html=True)
+        st.markdown("""<div style='background-color:rgba(255,255,255,0.05);border-radius:16px;padding:20px;'>""", unsafe_allow_html=True)
+        
+        # Player names
+        col1, col2 = st.columns(2)
+        with col1:
+            player1 = st.text_input("Player 1 Name", value="Player 1")
+        with col2:
+            player2 = st.text_input("Player 2 Name", value="Player 2")
+        
+        # Max cards selection
+        max_cards = st.slider("Maximum Cards to Select", min_value=1, max_value=10, value=10)
+        
+        # Apply settings button
+        if st.button("Apply Settings", key="apply_settings"):
+            # Add JavaScript to update the game's settings
+            st.markdown(f"""
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {{
+                    // Set values in the game's input fields
+                    if (document.getElementById('player1Name')) {{
+                        document.getElementById('player1Name').value = "{player1}";
+                    }}
+                    if (document.getElementById('player2Name')) {{
+                        document.getElementById('player2Name').value = "{player2}";
+                    }}
+                    if (document.getElementById('maxCards')) {{
+                        document.getElementById('maxCards').value = {max_cards};
+                    }}
+                }});
+            </script>
+            """, unsafe_allow_html=True)
+            st.success("Settings applied! Return to the game to start playing.")
+        
+        st.markdown("""</div>""", unsafe_allow_html=True)
+    
+    elif st.session_state.active_tab == 'rules':
+        st.markdown("""<h2 style='color:#00b4d8;'>How to Play</h2>""", unsafe_allow_html=True)
+        st.markdown("""<div style='background-color:rgba(255,255,255,0.05);border-radius:16px;padding:20px;'>""", unsafe_allow_html=True)
+        
+        st.markdown("""
+        ### Card Bluff Roulette Rules
+        
+        #### Basic Gameplay:
+        1. Each player gets 10 cards and there's one center card.
+        2. The active player selects cards from their hand and clicks "Ready".
+        3. The opponent then guesses if the selected cards match the center card's suit.
+        4. If the active player bluffs (claims match when they don't) and is caught, they get random cards equal to the number they played.
+        5. If the guess is wrong, the guessing player faces the Mine Challenge.
+        
+        #### Mine Challenge:
+        - Each player starts with their own set of 6 diamonds.
+        - If you click a safe diamond, it is removed from your set and the round immediately ends as safe.
+        - If you click the lose diamond, you lose the game and return to the start screen.
+        
+        #### Winning the Game:
+        - You win if you empty your hand of cards.
+        - You win if your opponent clicks the lose diamond during their Mine Challenge.
+        """)
+        
+        st.markdown("""</div>""", unsafe_allow_html=True)
+    
+    elif st.session_state.active_tab == 'about':
+        st.markdown("""<h2 style='color:#00b4d8;'>About Card Bluff Roulette</h2>""", unsafe_allow_html=True)
+        st.markdown("""<div style='background-color:rgba(255,255,255,0.05);border-radius:16px;padding:20px;'>""", unsafe_allow_html=True)
+        
+        st.markdown("""
+        ### Card Bluff Roulette with Mine Challenge
+        
+        This game combines elements of card bluffing with a diamond mine challenge for an exciting twist on traditional card games.
+        
+        #### Features:
+        - Beautiful card animations and visual effects
+        - Engaging gameplay that combines strategy and luck
+        - Background music to enhance the gaming experience
+        - Customizable player names and game settings
+        
+        #### How to Use This App:
+        - Use the menu buttons at the top to navigate between different sections
+        - Click on "Play Game" to start playing
+        - Adjust your preferences in the "Settings" section
+        - Learn how to play in the "Rules" section
+        
+        Enjoy the game!
+        """)
+        
+        st.markdown("""</div>""", unsafe_allow_html=True)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
