@@ -34,7 +34,12 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 24px;
     }
-    .audio-button {
+    .audio-controls {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    .screen-app-button {
         background: linear-gradient(135deg, #00b4d8, #0096c7);
         color: white;
         border: none;
@@ -43,10 +48,8 @@ st.markdown("""
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        display: flex;
-        margin: 0 auto 10px auto;
-        justify-content: center;
         box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+        margin: 0 5px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -55,12 +58,17 @@ st.markdown("""
 current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, "game tst.html")
 
-# Add a title and audio button
+# Add a title and a link to the ScreenApp
 st.markdown('<div class="title">Card Bluff Roulette</div>', unsafe_allow_html=True)
 
-# Add a simple audio player in Streamlit
-audio_file = "https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3"
-st.audio(audio_file, format='audio/mp3', start_time=0)
+# Add a link to open ScreenApp in a new tab
+st.markdown("""
+<div class="audio-controls">
+    <a href="https://screenapp.io/app/#/shared/EIjBavQsmW" target="_blank">
+        <button class="screen-app-button">🎵 Play Background Music</button>
+    </a>
+</div>
+""", unsafe_allow_html=True)
 
 # Read the HTML file with error handling
 try:
@@ -70,13 +78,20 @@ try:
     # Remove the old audio element and music button to avoid conflicts
     html_content = html_content.replace(
         '<!-- Audio element for background music -->\n  <audio id="backgroundMusic" loop>\n    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">\n    Je browser ondersteunt het audio-element niet.\n  </audio>',
-        '<!-- Audio is now handled by Streamlit -->'
+        '<!-- Audio is now handled separately -->'
     )
     
     html_content = html_content.replace(
         '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>',
         ''
     )
+    
+    # Update the music-related JavaScript functions to avoid console errors
+    if 'function toggleMusic()' in html_content:
+        html_content = html_content.replace(
+            'function toggleMusic() {',
+            'function toggleMusic() { return; // Function disabled, audio handled externally'
+        )
     
     # Display the modified HTML content
     components.html(html_content, height=800, scrolling=True)
