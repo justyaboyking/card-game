@@ -28,8 +28,22 @@ st.markdown("""
         height: 100vh;
         border: none;
     }
+    .audio-controls {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .title {
+        color: #00b4d8;
+        text-align: center;
+        margin-bottom: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Add music controls in Streamlit (OUTSIDE the HTML component)
+st.markdown('<div class="title"><h2>Card Bluff Roulette</h2></div>', unsafe_allow_html=True)
+st.markdown('<div class="audio-controls">Game Music:</div>', unsafe_allow_html=True)
+st.audio("https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3", format="audio/mp3")
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +53,10 @@ html_file_path = os.path.join(current_dir, "game tst.html")
 try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
+    
+    # Modify the HTML to remove the music button and audio container
+    html_content = html_content.replace('<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>', 
+                                        '<!-- Music handled by Streamlit -->')
     
     # Modify the HTML content to make it work better in an iframe
     modified_html = f"""
@@ -73,7 +91,7 @@ try:
     """
     
     # Display the HTML content
-    components.html(modified_html, height=1000, scrolling=True)
+    components.html(modified_html, height=800, scrolling=True)
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
