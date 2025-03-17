@@ -20,17 +20,44 @@ def autoplay_audio(file_url, audio_id="streamlit_audio"):
             Your browser does not support the audio element.
         </audio>
         <script>
-            // Force audio to play
+            // Force audio to play with multiple attempts
             document.addEventListener('DOMContentLoaded', function() {{  
+                // Try to play immediately
                 const audioElements = document.getElementsByTagName('audio');
                 for(let i = 0; i < audioElements.length; i++) {{
                     const audio = audioElements[i];
-                    audio.play().catch(e => console.log('Audio play failed:', e));
+                    
+                    // First attempt
+                    audio.play().catch(e => {{
+                        console.log('Initial audio play failed, will retry:', e);
+                        
+                        // Second attempt after a short delay
+                        setTimeout(() => {{
+                            audio.play().catch(e => {{
+                                console.log('Second audio play attempt failed:', e);
+                                
+                                // Third attempt with user interaction simulation
+                                document.addEventListener('click', function audioClickHandler() {{
+                                    audio.play();
+                                    document.removeEventListener('click', audioClickHandler);
+                                }}, {{ once: true }});
+                            }});
+                        }}, 2000);
+                    }});
                 }}
+                
+                // Make audio element accessible globally for mute button
+                window.streamlitAudio = document.getElementById('{audio_id}');
+                
+                // Keep checking if audio is playing and restart if needed
+                setInterval(() => {{
+                    const audio = document.getElementById('{audio_id}');
+                    if (audio && (audio.paused || audio.ended) && !audio.muted) {{
+                        console.log('Audio stopped, attempting to restart');
+                        audio.play().catch(e => console.log('Restart failed:', e));
+                    }}
+                }}, 5000);
             }});
-            
-            // Make audio element accessible globally for mute button
-            window.streamlitAudio = document.getElementById('{audio_id}');
         </script>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
