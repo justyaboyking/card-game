@@ -17,7 +17,18 @@ def autoplay_audio(file_url):
     audio_html = f"""
         <audio autoplay loop style="display:none;">
             <source src="{file_url}" type="audio/mpeg">
+            Your browser does not support the audio element.
         </audio>
+        <script>
+            // Force audio to play
+            document.addEventListener('DOMContentLoaded', function() {
+                const audioElements = document.getElementsByTagName('audio');
+                for(let i = 0; i < audioElements.length; i++) {
+                    const audio = audioElements[i];
+                    audio.play().catch(e => console.log('Audio play failed:', e));
+                }
+            });
+        </script>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
 
@@ -75,7 +86,9 @@ def get_base64_audio(file_path):
             if len(data) < 1000:  # Check if file is too small (likely invalid)
                 st.warning(f"The audio file at {file_path} appears to be invalid or too small ({len(data)} bytes). Please replace it with a valid MP3 file.")
                 return None
-            return base64.b64encode(data).decode()
+            encoded_data = base64.b64encode(data).decode()
+            st.write(f"Successfully encoded {file_path} ({len(data)} bytes)")
+            return encoded_data
     except Exception as e:
         st.error(f"Error loading audio file: {str(e)}")
         return None
