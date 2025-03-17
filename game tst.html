@@ -493,12 +493,10 @@
   </style>
 </head>
 <body>
-  <!-- Updated audio element with proper sources -->
-  <audio id="backgroundMusic" loop>
-    <!-- Update this path to your audio file (saved locally or hosted online) -->
-    <source src="game-music.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
+  <!-- Audio using iframe approach for better Streamlit compatibility -->
+  <div id="audioContainer" style="display:none;">
+    <iframe id="backgroundMusicFrame" src="about:blank" allow="autoplay" style="display:none"></iframe>
+  </div>
   
   <!-- Game container -->
   <div id="game" class="container"></div>
@@ -631,33 +629,29 @@
     }
     
     // --------------------
-    // Audio functions
+    // Audio functions for Streamlit
     // --------------------
     let musicPlaying = false;
+    const musicURL = "https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3"; // Example free music URL
     
     function toggleMusic() {
-      const backgroundMusic = document.getElementById('backgroundMusic');
       const musicButton = document.getElementById('musicToggle');
+      const audioContainer = document.getElementById('audioContainer');
       
       if (musicPlaying) {
-        backgroundMusic.pause();
+        // Stop music by clearing container
+        audioContainer.innerHTML = '<iframe id="backgroundMusicFrame" src="about:blank" allow="autoplay" style="display:none"></iframe>';
         musicButton.innerHTML = '🔇';
       } else {
-        backgroundMusic.volume = 0.3;
-        backgroundMusic.play()
-          .then(() => {
-            console.log("Music started playing");
-          })
-          .catch(error => {
-            console.error("Error playing music:", error);
-          });
+        // Start music by creating iframe with music URL
+        audioContainer.innerHTML = `<iframe id="backgroundMusicFrame" src="${musicURL}" allow="autoplay" style="display:none"></iframe>`;
         musicButton.innerHTML = '🔊';
       }
       
       musicPlaying = !musicPlaying;
     }
     
-    // Attempt to start music when game starts
+    // Function to start game without audio autoplay attempt
     function saveNamesAndStartGame() {
       const name1 = document.getElementById('player1Name').value || "Player 1";
       const name2 = document.getElementById('player2Name').value || "Player 2";
@@ -665,17 +659,8 @@
       const max = parseInt(document.getElementById('maxCards').value);
       gameState.maxCards = (max && max > 0 && max <= 10) ? max : 10;
       
-      // Try to start music
-      const backgroundMusic = document.getElementById('backgroundMusic');
-      backgroundMusic.volume = 0.3;
-      backgroundMusic.play()
-        .then(() => {
-          musicPlaying = true;
-          document.getElementById('musicToggle').innerHTML = '🔊';
-        })
-        .catch(error => {
-          console.log("Autoplay prevented:", error);
-        });
+      // Note: We're not attempting autoplay as it likely won't work in Streamlit
+      // Music can be toggled manually with the button
       
       startGame();
     }
