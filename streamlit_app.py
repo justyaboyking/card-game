@@ -172,7 +172,7 @@ try:
         if st.button("🔊 Mute", key="mute_button"):
             # This doesn't directly control audio - we use JavaScript for that
             st.session_state.muted = not st.session_state.get('muted', False)
-            st.experimental_rerun()
+            st.rerun()
     
     # JavaScript to control audio muting
     mute_state = st.session_state.get('muted', False)
