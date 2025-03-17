@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
+import base64
 
 # Set full page width and remove padding
 st.set_page_config(
@@ -49,24 +50,79 @@ try:
     with open(html_file_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    # Direct audio embed URL from Vocaroo
-    audio_url = "https://voca.ro/1jZWl8sP5fg6"
+    # Use a reliable embedded audio player approach
+    # Replace the problematic audio element with a more reliable solution
+    new_audio_element = '''
+    <audio id="backgroundMusic" loop>
+      <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    '''
     
-    # Replace the original audio source with the Vocaroo URL
+    # Replace the original audio element
     html_content = html_content.replace(
-        '<source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">',
-        f'<source src="{audio_url}" type="audio/mpeg">'
+        '<audio id="backgroundMusic" loop>\n    <source src="https://suno.com/song/cdcd7d4d-e050-42f1-a614-356166e25c54" type="audio/mpeg">\n    Je browser ondersteunt het audio-element niet.\n  </audio>',
+        new_audio_element
     )
     
-    # Make sure the music button is properly configured
-    if '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>' not in html_content:
-        html_content = html_content.replace(
-            '<!-- Fixed End Game button -->',
-            '<!-- Music control button -->\n  <button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>\n  <!-- Fixed End Game button -->'
-        )
+    # Add a debug message to help track music playback
+    debug_script = '''
+    <script>
+      // Add this right before the closing </body> tag
+      console.log("Music element found:", document.getElementById('backgroundMusic') !== null);
+      
+      // Override the original toggleMusic function with better error handling
+      const originalToggleMusic = window.toggleMusic;
+      window.toggleMusic = function() {
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const musicButton = document.getElementById('musicToggle');
+        
+        if (!backgroundMusic) {
+          console.error("Background music element not found!");
+          return;
+        }
+        
+        console.log("Toggle music called, current state:", musicPlaying);
+        
+        if (musicPlaying) {
+          backgroundMusic.pause();
+          musicButton.innerHTML = '🔇';
+          console.log("Music paused");
+        } else {
+          backgroundMusic.volume = 0.3;
+          
+          try {
+            const playPromise = backgroundMusic.play();
+            
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("Music started playing successfully");
+                  musicButton.innerHTML = '🔊';
+                })
+                .catch(error => {
+                  console.error("Error playing music:", error);
+                  alert("Click the 🔊 button to start music (browser autoplay blocked)");
+                });
+            }
+          } catch (e) {
+            console.error("Exception playing music:", e);
+          }
+        }
+        
+        musicPlaying = !musicPlaying;
+      };
+    </script>
+    '''
+    
+    # Insert the debug script before closing body tag
+    html_content = html_content.replace('</body>', f'{debug_script}</body>')
     
     # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
+    
+    # Add instructions for users
+    st.info("💡 **Tip:** If music doesn't play automatically, click the 🔊 button in the top-right corner.")
     
 except FileNotFoundError:
     st.error(f"Could not find the game file at {html_file_path}")
