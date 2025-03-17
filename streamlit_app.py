@@ -58,13 +58,8 @@ try:
         f'<source src="{audio_url}" type="audio/mpeg">'
     )
     
-    # Make sure the music button is present in the game interface
-    if '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button>' not in html_content:
-        # If the button is missing, add it back before the closing body tag
-        html_content = html_content.replace(
-            '</body>',
-            '<button id="musicToggle" class="button music-button" onclick="toggleMusic()">🔊</button></body>'
-        )
+    # Keep the original music button in the game itself
+    # We don't need to add a separate button in the Streamlit UI
     
     # Display the HTML content
     components.html(html_content, height=800, scrolling=True)
