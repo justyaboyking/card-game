@@ -12,49 +12,103 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Function to autoplay audio in the background
+# Function to autoplay audio in the background with fallback for incognito mode
 def autoplay_audio(file_url, audio_id="streamlit_audio"):
     audio_html = f"""
+        <div id="audio-container" style="text-align: center; margin-bottom: 10px; display: none;">
+            <button id="manual-play-button" style="background: linear-gradient(135deg, #00b4d8, #0096c7); color: white; border: none; border-radius: 30px; padding: 8px 16px; font-size: 14px; cursor: pointer; margin: 5px;">
+                🎵 Play Background Music
+            </button>
+            <span id="audio-status" style="font-size: 12px; color: #aaa;"></span>
+        </div>
         <audio id="{audio_id}" autoplay loop style="display:none;">
             <source src="{file_url}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
         <script>
+            // Detect if likely in incognito mode (not 100% reliable but helps)
+            function isLikelyIncognito() {{
+                return !window.localStorage || !window.indexedDB;
+            }}
+            
+            // Function to show the manual play button
+            function showPlayButton(message) {{
+                const container = document.getElementById('audio-container');
+                const status = document.getElementById('audio-status');
+                if (container) {{
+                    container.style.display = 'block';
+                }}
+                if (status && message) {{
+                    status.textContent = message;
+                }}
+            }}
+            
             // Force audio to play with multiple attempts
             document.addEventListener('DOMContentLoaded', function() {{  
-                // Try to play immediately
-                const audioElements = document.getElementsByTagName('audio');
-                for(let i = 0; i < audioElements.length; i++) {{
-                    const audio = audioElements[i];
-                    
-                    // First attempt
-                    audio.play().catch(e => {{
-                        console.log('Initial audio play failed, will retry:', e);
-                        
-                        // Second attempt after a short delay
-                        setTimeout(() => {{
-                            audio.play().catch(e => {{
-                                console.log('Second audio play attempt failed:', e);
-                                
-                                // Third attempt with user interaction simulation
-                                document.addEventListener('click', function audioClickHandler() {{
-                                    audio.play();
-                                    document.removeEventListener('click', audioClickHandler);
-                                }}, {{ once: true }});
-                            }});
-                        }}, 2000);
+                const audio = document.getElementById('{audio_id}');
+                let autoplaySuccessful = false;
+                
+                // Make audio element accessible globally for mute button
+                window.streamlitAudio = audio;
+                
+                // Setup manual play button
+                const playButton = document.getElementById('manual-play-button');
+                if (playButton) {{
+                    playButton.addEventListener('click', function() {{
+                        if (audio) {{
+                            audio.play()
+                                .then(() => {{
+                                    autoplaySuccessful = true;
+                                    showPlayButton('✓ Music playing');
+                                    setTimeout(() => {{
+                                        document.getElementById('audio-container').style.display = 'none';
+                                    }}, 3000);
+                                }})
+                                .catch(e => {{
+                                    console.error('Manual play failed:', e);
+                                    showPlayButton('⚠️ Browser blocked audio - try clicking again');
+                                }});
+                        }}
                     }});
                 }}
                 
-                // Make audio element accessible globally for mute button
-                window.streamlitAudio = document.getElementById('{audio_id}');
+                // If likely in incognito, show play button immediately
+                if (isLikelyIncognito()) {{
+                    showPlayButton('Incognito mode detected - click to play music');
+                }}
+                
+                // First attempt - try autoplay
+                audio.play()
+                    .then(() => {{
+                        autoplaySuccessful = true;
+                        console.log('Autoplay successful');
+                    }})
+                    .catch(e => {{
+                        console.log('Initial audio play failed, will retry:', e);
+                        showPlayButton('Click to play background music');
+                        
+                        // Second attempt after a short delay
+                        setTimeout(() => {{
+                            audio.play()
+                                .then(() => {{
+                                    autoplaySuccessful = true;
+                                    document.getElementById('audio-container').style.display = 'none';
+                                }})
+                                .catch(e => {{
+                                    console.log('Second audio play attempt failed:', e);
+                                }});
+                        }}, 2000);
+                    }});
                 
                 // Keep checking if audio is playing and restart if needed
                 setInterval(() => {{
-                    const audio = document.getElementById('{audio_id}');
-                    if (audio && (audio.paused || audio.ended) && !audio.muted) {{
+                    if (audio && autoplaySuccessful && (audio.paused || audio.ended) && !audio.muted) {{
                         console.log('Audio stopped, attempting to restart');
-                        audio.play().catch(e => console.log('Restart failed:', e));
+                        audio.play().catch(e => {{
+                            console.log('Restart failed:', e);
+                            autoplaySuccessful = false;
+                            showPlayButton('Music stopped - click to resume');
+                        }});
                     }}
                 }}, 5000);
             }});
